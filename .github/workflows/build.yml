@@ -25,7 +25,7 @@ jobs:
         
           - NAME: vntApp-android
             OS: ubuntu-latest
-            flutter-version: 3.22.0
+            flutter-version: 3.19.0
             
           - NAME: vntApp-windows
             OS: windows-2022
