@@ -131,6 +131,9 @@ jobs:
         if: matrix.NAME == 'vntApp-android'
         run: |
          sed -i 's|branch = "1.2.x"|rev = "501a9e8"|' rust/Cargo.toml
+         sed -i '0,/local_ipv4,/{s/local_ipv4,/local_ipv4.map(|ip| ip.to_string()),/}' rust/src/api/vnt_api.rs
+         sed -i '/ErrorType::Unknown => RustErrorType::Unknown,/a\    _ => RustErrorType::Unknown,' rust/src/api/vnt_api.rs
+         
          flutter pub get
          flutter upgrade
          flutter build apk --release
