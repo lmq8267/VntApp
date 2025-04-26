@@ -62,7 +62,7 @@ jobs:
           flutter precache --windows
           Invoke-WebRequest -Uri https://github.com/lmq8267/Toolchain/releases/download/flutter-3.24.5/windows-x64-release.zip -OutFile windows-x64-release.zip
           Expand-Archive -Path windows-x64-release.zip -DestinationPath windows-x64-release
-          Copy-Item -Path windows-x64-release/* -Destination "C:/hostedtoolcache/windows/flutter/stable-${{ env.FLUTTER_VERSION }}-x64/bin/cache/artifacts/engine/windows-x64-release/" -Recurse -Force
+          Copy-Item -Path windows-x64-release/* -Destination "C:/hostedtoolcache/windows/flutter/stable-3.24.5-x64/bin/cache/artifacts/engine/windows-x64-release/" -Recurse -Force
           Invoke-WebRequest -Uri https://github.com/lmq8267/Toolchain/releases/download/flutter-3.24.5/flutter_3.24.4_dropdown_menu_enableFilter.diff -OutFile flutter_3.24.4_dropdown_menu_enableFilter.diff
           
       - name: 打补丁以启用 Dropdown Menu 过滤支持
@@ -71,7 +71,7 @@ jobs:
         run: |
           cp flutter_3.24.4_dropdown_menu_enableFilter.diff $(dirname $(dirname $(which flutter)))
           cd $(dirname $(dirname $(which flutter)))
-          [[ "${{ env.FLUTTER_VERSION }}" == "3.24.5" ]] && git apply flutter_3.24.4_dropdown_menu_enableFilter.diff || true
+          git apply flutter_3.24.4_dropdown_menu_enableFilter.diff || true
 
       - name: Install Android rust target
         if: matrix.NAME == 'vntApp-android'
