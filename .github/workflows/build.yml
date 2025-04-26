@@ -25,9 +25,11 @@ jobs:
         
           - NAME: vntApp-android
             OS: ubuntu-latest
+            flutter-version: 3.22.0
             
           - NAME: vntApp-windows
             OS: windows-2022
+            flutter-version: 3.24.5
             
     runs-on: ${{ matrix.OS }}
     steps:
@@ -52,7 +54,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.24.5
+          flutter-version: ${{ matrix.flutter-version }}
 
       - name: 替换 Flutter 引擎为支持 Windows 7 的版本
         if: matrix.NAME == 'vntApp-windows'
@@ -62,7 +64,7 @@ jobs:
           flutter precache --windows
           Invoke-WebRequest -Uri https://github.com/lmq8267/Toolchain/releases/download/flutter-3.24.5/windows-x64-release.zip -OutFile windows-x64-release.zip
           Expand-Archive -Path windows-x64-release.zip -DestinationPath windows-x64-release
-          Copy-Item -Path windows-x64-release/* -Destination "C:/hostedtoolcache/windows/flutter/stable-3.24.5-x64/bin/cache/artifacts/engine/windows-x64-release/" -Recurse -Force
+          Copy-Item -Path windows-x64-release/* -Destination "C:/hostedtoolcache/windows/flutter/stable-${{ matrix.flutter-version }}-x64/bin/cache/artifacts/engine/windows-x64-release/" -Recurse -Force
           Invoke-WebRequest -Uri https://github.com/lmq8267/Toolchain/releases/download/flutter-3.24.5/flutter_3.24.4_dropdown_menu_enableFilter.diff -OutFile flutter_3.24.4_dropdown_menu_enableFilter.diff
           
       - name: 打补丁以启用 Dropdown Menu 过滤支持
