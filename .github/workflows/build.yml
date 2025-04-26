@@ -3,7 +3,7 @@ name: VntApp
 on:
   push:
     branches:
-      - main
+      - flutter
   workflow_dispatch:  
 
 concurrency:
