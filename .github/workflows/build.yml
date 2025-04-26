@@ -134,9 +134,10 @@ jobs:
          sed -i '0,/local_ipv4,/{s/local_ipv4,/local_ipv4.map(|ip| ip.to_string()),/}' rust/src/api/vnt_api.rs
          sed -i '/ErrorType::Unknown => RustErrorType::Unknown,/a\    _ => RustErrorType::Unknown,' rust/src/api/vnt_api.rs
          
+         flutter clean
+         flutter doctor -v
          flutter pub get
-         flutter upgrade
-         flutter build apk --release
+         flutter build apk --release 
          find . -type f -name "*.apk"
          mkdir -p /opt/vntAPP
          mv -f build/app/outputs/flutter-apk/app-release.apk /opt/vntAPP/app-release.apk
