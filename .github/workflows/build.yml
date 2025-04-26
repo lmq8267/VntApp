@@ -34,9 +34,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
          ref: flutter
-         
-      - name: List
-        run: find ./
         
       - name: 设置JDK环境
         if: matrix.NAME == 'vntApp-android'
@@ -85,7 +82,7 @@ jobs:
            rustup target add i686-linux-android
         
       - name: 构建安卓so库
-        if: matrix.NAME == 'vntApp-android'
+        if: matrix.NAME == '00vntApp-android'
         run: |
            cd rust
            rm -rf .cargo/config
