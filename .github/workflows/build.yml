@@ -140,14 +140,20 @@ jobs:
 
       - name: 构建 Windows vntAPP
         if: matrix.NAME == 'vntApp-windows'
+        shell: pwsh
         run: |
           flutter pub get
           flutter build windows --release -v
+
           echo "构建完成，开始列出生成的文件"
-          dir build\windows\x64\runner\Release
+          Get-ChildItem build\windows\x64\runner\Release
+
+          Set-Location build\windows\x64\runner\Release
+
+          Compress-Archive -Path * -DestinationPath $Env:GITHUB_WORKSPACE/vntApp-windows.zip -Force
          
       - name: Archive artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.NAME }}
-          path: ${{ runner.os == 'Windows' && 'build\windows\x64\runner\Release' || '/opt/vntAPP' }}
+          path: ${{ runner.os == 'Windows' && 'vntApp-windows.zip' || '/opt/vntAPP/app-release.apk' }}
