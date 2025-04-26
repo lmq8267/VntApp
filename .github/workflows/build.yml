@@ -142,7 +142,8 @@ jobs:
          flutter build apk --release 
          find . -type f -name "*.apk"
          mkdir -p /opt/vntAPP
-         mv -f build/app/outputs/apk/release/app-release.apk /opt/vntAPP/app-release.apk
+         #mv -f build/app/outputs/apk/release/app-release.apk app-release.apk
+         mv -f build/app/outputs/flutter-apk/app-release.apk app-release.apk
 
       - name: 构建 Windows vntAPP
         if: matrix.NAME == 'vntApp-windows'
@@ -162,4 +163,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.NAME }}
-          path: ${{ runner.os == 'Windows' && 'vntApp-windows.zip' || '/opt/vntAPP/app-release.apk' }}
+          path: ${{ runner.os == 'Windows' && 'vntApp-windows.zip' || 'app-release.apk' }}
