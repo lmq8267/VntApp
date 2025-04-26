@@ -130,6 +130,7 @@ jobs:
       - name: 构建 Android vntAPP
         if: matrix.NAME == 'vntApp-android'
         run: |
+         sed -i 's|branch = "1.2.x"|rev = "501a9e8"|' rust/Cargo.toml
          flutter pub get
          flutter upgrade
          flutter build apk --release
@@ -149,4 +150,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.NAME }}
-          path: /opt/vntAPP
+          path: ${{ runner.os == 'Windows' && 'build\windows\x64\runner\Release' || '/opt/vntAPP' }}
