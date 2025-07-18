@@ -151,6 +151,8 @@ jobs:
         if: matrix.NAME == 'vntApp-windows'
         shell: pwsh
         run: |
+          sed -i '0,/local_ipv4,/{s/local_ipv4,/local_ipv4.map(|ip| ip.to_string()),/}' rust/src/api/vnt_api.rs
+          sed -i '/ErrorType::Unknown => RustErrorType::Unknown,/a\    _ => RustErrorType::Unknown,' rust/src/api/vnt_api.rs
           flutter pub get
           flutter build windows --release -v
 
