@@ -142,11 +142,33 @@ jobs:
          flutter build apk --release 
          find . -type f -name "*.apk"
          mkdir -p /opt/vntAPP
-         #mv -f build/app/outputs/apk/release/app-release.apk app-release.apk
-         mv -f build/app/outputs/flutter-apk/app-release.apk app-release.apk
-         keytool -genkey -v -keystore keystore.jks -storepass $password -alias key -keypass $password -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android, OU=Android, O=Android, L=BeiJing, ST=BeiJing, C=CN"
-         /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign --ks keystore.jks --ks-key-alias key --ks-pass pass:$password --key-pass pass:$password --out vntApp-android.apk --in app-release.apk --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled true
-         
+         mv -f build/app/outputs/apk/release/app-release.apk app-release.apk
+         #mv -f build/app/outputs/flutter-apk/app-release.apk app-release.apk
+
+         password=vntAPP
+         keytool -genkeypair \
+          -v \
+          -keystore keystore.jks \
+          -storepass "$password" \
+          -alias key \
+          -keypass "$password" \
+          -keyalg RSA \
+          -keysize 2048 \
+          -validity 10000 \
+          -dname "CN=Android, OU=Android, O=Android, L=BeiJing, ST=BeiJing, C=CN"
+          
+          /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign \
+            --ks keystore.jks \
+            --ks-key-alias key \
+            --ks-pass pass:$password \
+            --key-pass pass:$password \
+            --out vntApp-android.apk \
+            --in app-release.apk \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --v4-signing-enabled true
+
       - name: 构建 Windows vntAPP
         if: matrix.NAME == 'vntApp-windows'
         shell: pwsh
