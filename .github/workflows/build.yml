@@ -86,6 +86,7 @@ jobs:
         run: |
            cd rust
            rm -rf .cargo/config
+           sed -i 's|main|Android|' Cargo.toml
            sed -i '0,/local_ipv4,/{s/local_ipv4,/local_ipv4.map(|ip| ip.to_string()),/}' src/api/vnt_api.rs
            sed -i '/ErrorType::Unknown => RustErrorType::Unknown,/a\    _ => RustErrorType::Unknown,' src/api/vnt_api.rs
            export PATH=/opt/ndk/android-ndk-r26d:/opt/ndk/android-ndk-r26d/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH  
