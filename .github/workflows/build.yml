@@ -82,7 +82,7 @@ jobs:
            rustup target add i686-linux-android
         
       - name: 构建安卓so库
-        if: matrix.NAME == '00vntApp-android'
+        if: matrix.NAME == 'vntApp-android'
         run: |
            cd rust
            rm -rf .cargo/config
