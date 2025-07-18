@@ -130,9 +130,9 @@ jobs:
       - name: 构建 Android vntAPP
         if: matrix.NAME == 'vntApp-android'
         run: |
-         sed -i 's|branch = "1.2.x"|rev = "501a9e8"|' rust/Cargo.toml
-         sed -i '0,/local_ipv4,/{s/local_ipv4,/local_ipv4.map(|ip| ip.to_string()),/}' rust/src/api/vnt_api.rs
-         sed -i '/ErrorType::Unknown => RustErrorType::Unknown,/a\    _ => RustErrorType::Unknown,' rust/src/api/vnt_api.rs
+         #sed -i 's|branch = "1.2.x"|rev = "501a9e8"|' rust/Cargo.toml
+         #sed -i '0,/local_ipv4,/{s/local_ipv4,/local_ipv4.map(|ip| ip.to_string()),/}' rust/src/api/vnt_api.rs
+         #sed -i '/ErrorType::Unknown => RustErrorType::Unknown,/a\    _ => RustErrorType::Unknown,' rust/src/api/vnt_api.rs
          
          flutter clean
          flutter doctor -v
@@ -142,7 +142,9 @@ jobs:
          mkdir -p /opt/vntAPP
          #mv -f build/app/outputs/apk/release/app-release.apk app-release.apk
          mv -f build/app/outputs/flutter-apk/app-release.apk app-release.apk
-
+         keytool -genkey -v -keystore keystore.jks -storepass $password -alias key -keypass $password -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android, OU=Android, O=Android, L=BeiJing, ST=BeiJing, C=CN"
+         /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign --ks keystore.jks --ks-key-alias key --ks-pass pass:$password --key-pass pass:$password --out vntApp-android.apk --in app-release.apk --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled true
+         
       - name: 构建 Windows vntAPP
         if: matrix.NAME == 'vntApp-windows'
         shell: pwsh
@@ -161,7 +163,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.NAME }}
-          path: ${{ runner.os == 'Windows' && 'vntApp-windows.zip' || 'app-release.apk' }}
+          path: ${{ runner.os == 'Windows' && 'vntApp-windows.zip' || 'vntApp-android.apk' }}
 
   deploy:
     needs: build
