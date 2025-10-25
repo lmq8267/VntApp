@@ -162,7 +162,7 @@ impl VntApi {
             compressor,
             true,
             vnt_config.allow_wire_guard,
-            local_ipv4,
+            local_ipv4.map(|ip| ip.to_string()),
         )?;
         Ok(Self {
             vnt: Vnt::new(conf, call)?,
@@ -660,6 +660,7 @@ impl From<ErrorType> for RustErrorType {
             ErrorType::InvalidIp => RustErrorType::InvalidIp,
             ErrorType::LocalIpExists => RustErrorType::LocalIpExists,
             ErrorType::Unknown => RustErrorType::Unknown,
+            _ => RustErrorType::Unknown,
         }
     }
 }
