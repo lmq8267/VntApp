@@ -21,26 +21,7 @@ class _NetworkConfigInputPageState extends State<NetworkConfigInputPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _groupNumberController = TextEditingController();
-  final _deviceNameController = TextEditingController(
-      text: () {
-        String version = Platform.operatingSystemVersion;
-        // 移除可能存在的引号
-        version = version.replaceAll('"', '').trim();
-        
-        // 尝试获取主机名
-        String hostname = '';
-        try {
-          hostname = Platform.localHostname;
-          if (hostname.isNotEmpty) {
-            version = '$hostname-$version';
-          }
-        } catch (e) {
-          // 获取失败，保持原样
-        }
-        
-        // 截取前128个字符（vnt-Redir 限制）
-        return version.length > 128 ? version.substring(0, 128) : version;
-      }());
+  final _deviceNameController = TextEditingController();
   final _virtualIPv4Controller = TextEditingController();
   final _localDevController = TextEditingController();
   final _serverAddressController = TextEditingController();
@@ -81,6 +62,7 @@ class _NetworkConfigInputPageState extends State<NetworkConfigInputPage> {
   @override
   void initState() {
     super.initState();
+    _initializeDeviceName();
     getDeviceUniqueId();
     if (widget.config != null) {
       _loadConfig(widget.config!);
@@ -104,6 +86,32 @@ class _NetworkConfigInputPageState extends State<NetworkConfigInputPage> {
     }
     if (_portGroupControllers.isEmpty) {
       _portGroupControllers.add(TextEditingController());
+    }
+  }
+
+  Future<void> _initializeDeviceName() async {
+    try {
+      String version = Platform.operatingSystemVersion.replaceAll('"', '').trim();
+      
+      try {
+        final hostname = await Future.microtask(() => Platform.localHostname)
+            .timeout(const Duration(seconds: 2));
+        if (hostname.isNotEmpty) {
+          version = '$hostname-$version';
+        }
+      } catch (e) {
+        // 超时或获取失败，使用构建号
+      }
+      
+      final deviceName = version.length > 64 ? version.substring(0, 64) : version;
+      
+      if (mounted) {
+        setState(() {
+          _deviceNameController.text = deviceName;
+        });
+      }
+    } catch (e) {
+      // 构建号也获取失败，保持为空
     }
   }
 
