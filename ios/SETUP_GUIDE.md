@@ -19,7 +19,7 @@ cd ios
 4. 选择 `Widget Extension`
 5. 配置：
    - Product Name: `VNTWidget`
-   - Bundle Identifier: `com.vnt.app.widget`
+   - Bundle Identifier: `top.wherewego.vntApp.widget`
    - 取消勾选 "Include Configuration Intent"
 6. 点击 Finish
 
@@ -36,7 +36,7 @@ cd ios
    - Signing & Capabilities
    - 点击 `+ Capability`
    - 添加 `App Groups`
-   - 勾选 `group.com.vnt.app`
+   - 勾选 `group.top.wherewego.vntApp`
 
 9. **配置Info.plist**：
    - 选择 VNTWidget target
@@ -51,7 +51,7 @@ cd ios
 3. 选择 `Intents Extension`
 4. 配置：
    - Product Name: `VNTIntents`
-   - Bundle Identifier: `com.vnt.app.intents`
+   - Bundle Identifier: `top.wherewego.vntApp.intents`
 5. 点击 Finish
 
 6. **删除自动生成的文件**，添加我们的文件：
@@ -68,7 +68,7 @@ cd ios
    - Signing & Capabilities
    - 点击 `+ Capability`
    - 添加 `App Groups`
-   - 勾选 `group.com.vnt.app`
+   - 勾选 `group.top.wherewego.vntApp`
 
 8. **配置Info.plist**：
    - 选择 VNTIntents target
@@ -132,10 +132,10 @@ cd ios
 
 1. **签名**：所有targets需要使用相同的开发者账号
 2. **Bundle ID**：
-   - 主应用: `com.vnt.app`
-   - Widget: `com.vnt.app.widget`
-   - Intents: `com.vnt.app.intents`
-3. **App Groups**：所有targets必须使用 `group.com.vnt.app`
+   - 主应用: `top.wherewego.vntApp`
+   - Widget: `top.wherewego.vntApp.widget`
+   - Intents: `top.wherewego.vntApp.intents`
+3. **App Groups**：所有targets必须使用 `group.top.wherewego.vntApp`
 4. **iOS版本**：Widget需要iOS 14.0+，Shortcuts需要iOS 12.0+
 
 ## 参考文档

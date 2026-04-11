@@ -6,7 +6,7 @@ class ConnectVPNIntentHandler: NSObject, ConnectVPNIntentHandling {
     
     func handle(intent: ConnectVPNIntent, completion: @escaping (ConnectVPNIntentResponse) -> Void) {
         // 检查是否有默认配置
-        guard let defaults = UserDefaults(suiteName: "group.com.vnt.app"),
+        guard let defaults = UserDefaults(suiteName: "group.top.wherewego.vntApp"),
               let defaultKey = defaults.string(forKey: "flutter.default-key"),
               !defaultKey.isEmpty else {
             completion(ConnectVPNIntentResponse(code: .failure, userActivity: nil))
@@ -35,7 +35,7 @@ class ConnectVPNIntentHandler: NSObject, ConnectVPNIntentHandling {
 class DisconnectVPNIntentHandler: NSObject, DisconnectVPNIntentHandling {
     
     func handle(intent: DisconnectVPNIntent, completion: @escaping (DisconnectVPNIntentResponse) -> Void) {
-        guard let defaults = UserDefaults(suiteName: "group.com.vnt.app") else {
+        guard let defaults = UserDefaults(suiteName: "group.top.wherewego.vntApp") else {
             completion(DisconnectVPNIntentResponse(code: .failure, userActivity: nil))
             return
         }

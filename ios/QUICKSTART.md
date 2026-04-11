@@ -29,7 +29,7 @@ open ios/Runner.xcworkspace
    - Product Name: `VntTunnelExtension`
    - Team: 选择你的开发团队
    - Language: Swift
-   - Bundle Identifier: `com.vnt.app.tunnel`（或你的Bundle ID + `.tunnel`）
+   - Bundle Identifier: `top.wherewego.vntApp.tunnel`（或你的Bundle ID + `.tunnel`）
 4. 点击 **Finish**
 5. 弹出对话框询问是否激活scheme，点击 **Activate**
 
@@ -59,7 +59,7 @@ open ios/Runner.xcworkspace
 2. 点击 **Signing & Capabilities** 标签
 3. 点击 **+ Capability**，添加:
    - **Network Extensions** (选择Packet Tunnel Provider)
-   - **App Groups** (添加: `group.com.vnt.app`)
+   - **App Groups** (添加: `group.top.wherewego.vntApp`)
 
 ### 步骤4: 配置主应用
 
@@ -74,7 +74,7 @@ open ios/Runner.xcworkspace
 2. 点击 **Signing & Capabilities** 标签
 3. 点击 **+ Capability**，添加:
    - **Network Extensions**
-   - **App Groups** (添加: `group.com.vnt.app`)
+   - **App Groups** (添加: `group.top.wherewego.vntApp`)
 
 #### 4.3 配置Entitlements
 
@@ -92,7 +92,7 @@ open ios/Runner.xcworkspace
 	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.vnt.app</string>
+		<string>group.top.wherewego.vntApp</string>
 	</array>
 </dict>
 </plist>
@@ -164,7 +164,7 @@ await IOSVPNService.stopVPN();
 
 **A**: 查看日志:
 ```bash
-log stream --predicate 'subsystem == "com.vnt.app.tunnel"' --level debug
+log stream --predicate 'subsystem == "top.wherewego.vntApp.tunnel"' --level debug
 ```
 
 检查:

@@ -41,7 +41,7 @@ ios/
    - File → New → Target
    - 选择 "Widget Extension"
    - Product Name: `VNTWidget`
-   - Bundle Identifier: `com.vnt.app.widget`
+   - Bundle Identifier: `top.wherewego.vntApp.widget`
    - 勾选 "Include Configuration Intent"
 
 2. **添加文件**:
@@ -52,7 +52,7 @@ ios/
    - 选择VNTWidget target
    - Signing & Capabilities → + Capability
    - 添加 "App Groups"
-   - 勾选 `group.com.vnt.app`
+   - 勾选 `group.top.wherewego.vntApp`
 
 ### 2. 添加Intents Extension
 
@@ -60,7 +60,7 @@ ios/
    - File → New → Target
    - 选择 "Intents Extension"
    - Product Name: `VNTIntents`
-   - Bundle Identifier: `com.vnt.app.intents`
+   - Bundle Identifier: `top.wherewego.vntApp.intents`
 
 2. **添加文件**:
    - 将 `ios/VNTIntents/IntentHandler.swift` 添加到VNTIntents target
@@ -70,7 +70,7 @@ ios/
    - 选择VNTIntents target
    - Signing & Capabilities → + Capability
    - 添加 "App Groups"
-   - 勾选 `group.com.vnt.app`
+   - 勾选 `group.top.wherewego.vntApp`
 
 ### 3. 配置主应用
 
@@ -106,7 +106,7 @@ await platform.invokeMethod('clearUpdateNotification');
 
 ```dart
 class IOSWidgetService {
-  static const platform = MethodChannel('com.vnt.app/vpn');
+  static const platform = MethodChannel('top.wherewego.vntApp/vpn');
   
   // 设置更新提示
   static Future<void> setUpdateAvailable(String message) async {

@@ -44,7 +44,7 @@ struct VNTWidgetProvider: IntentTimelineProvider {
     }
     
     private func loadCurrentStatus() -> VNTWidgetEntry {
-        guard let defaults = UserDefaults(suiteName: "group.com.vnt.app") else {
+        guard let defaults = UserDefaults(suiteName: "group.top.wherewego.vntApp") else {
             return VNTWidgetEntry(
                 date: Date(),
                 isConnected: false,

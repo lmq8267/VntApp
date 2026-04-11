@@ -41,14 +41,14 @@ ios/
 2. File → New → Target
 3. 选择"Network Extension"
 4. Product Name: `VntTunnelExtension`
-5. Bundle Identifier: `com.vnt.app.tunnel`（需要与代码中一致）
+5. Bundle Identifier: `top.wherewego.vntApp.tunnel`（需要与代码中一致）
 
 #### 2.2 配置主应用Target
 
 1. 选择Runner target
 2. Signing & Capabilities:
    - 添加"Network Extensions"能力
-   - 添加"App Groups"能力，Group ID: `group.com.vnt.app`
+   - 添加"App Groups"能力，Group ID: `group.top.wherewego.vntApp`
 3. Build Settings:
    - 搜索"Bridging Header"
    - 设置为: `Runner/Runner-Bridging-Header.h`
@@ -61,7 +61,7 @@ ios/
    - 设置Embed为"Do Not Embed"
 3. Signing & Capabilities:
    - 添加"Network Extensions"能力（Packet Tunnel Provider）
-   - 添加"App Groups"能力，Group ID: `group.com.vnt.app`
+   - 添加"App Groups"能力，Group ID: `group.top.wherewego.vntApp`
 4. Build Settings:
    - 搜索"Bridging Header"
    - 设置为: `VntTunnelExtension/VNT-Bridging-Header.h`
@@ -83,8 +83,8 @@ ios/
 1. 登录[Apple Developer](https://developer.apple.com/)
 2. Certificates, Identifiers & Profiles → Identifiers
 3. 创建两个App ID:
-   - 主应用: `com.vnt.app`
-   - Extension: `com.vnt.app.tunnel`
+   - 主应用: `top.wherewego.vntApp`
+   - Extension: `top.wherewego.vntApp.tunnel`
 4. 为两个App ID启用:
    - Network Extensions
    - App Groups
@@ -92,7 +92,7 @@ ios/
 #### 3.3 创建App Group
 
 1. Identifiers → App Groups
-2. 创建: `group.com.vnt.app`
+2. 创建: `group.top.wherewego.vntApp`
 3. 将此Group添加到两个App ID
 
 #### 3.4 创建Provisioning Profile
@@ -130,7 +130,7 @@ flutter build ios --no-codesign
 import 'package:flutter/services.dart';
 
 class IOSVPNService {
-  static const platform = MethodChannel('com.vnt.app/vpn');
+  static const platform = MethodChannel('top.wherewego.vntApp/vpn');
   
   // 启动VPN
   static Future<bool> startVPN({
@@ -241,7 +241,7 @@ print('VPN Status: $status');
 
 ```bash
 # 实时查看日志
-log stream --predicate 'subsystem == "com.vnt.app.tunnel"' --level debug
+log stream --predicate 'subsystem == "top.wherewego.vntApp.tunnel"' --level debug
 
 # 查看所有VNT相关日志
 log show --predicate 'subsystem CONTAINS "vnt"' --last 1h

@@ -79,7 +79,7 @@
 - [ ] Provisioning Profile已配置
 - [ ] Capabilities已添加:
   - [ ] Network Extensions
-  - [ ] App Groups (group.com.vnt.app)
+  - [ ] App Groups (group.top.wherewego.vntApp)
 - [ ] Runner.entitlements已配置
 - [ ] VPNManager.swift已添加到项目
 - [ ] AppDelegate.swift已更新
@@ -91,7 +91,7 @@
 - [ ] Provisioning Profile已配置
 - [ ] Capabilities已添加:
   - [ ] Network Extensions (Packet Tunnel Provider)
-  - [ ] App Groups (group.com.vnt.app)
+  - [ ] App Groups (group.top.wherewego.vntApp)
 - [ ] VntTunnelExtension.entitlements已配置
 - [ ] PacketTunnelProvider.swift已添加
 - [ ] VNT-Bridging-Header.h已配置
@@ -105,7 +105,7 @@
 - [ ] 付费开发者账户已激活
 - [ ] App ID已创建（主应用）
 - [ ] App ID已创建（Extension）
-- [ ] App Group已创建 (group.com.vnt.app)
+- [ ] App Group已创建 (group.top.wherewego.vntApp)
 - [ ] App Group已添加到两个App ID
 - [ ] Network Extensions已启用（两个App ID）
 - [ ] Development Provisioning Profile已创建（主应用）
@@ -212,7 +212,7 @@ flutter run -d <device-id>
 
 ```bash
 # 查看Extension日志
-log stream --predicate 'subsystem == "com.vnt.app.tunnel"' --level debug
+log stream --predicate 'subsystem == "top.wherewego.vntApp.tunnel"' --level debug
 
 # 查看所有VNT日志
 log show --predicate 'subsystem CONTAINS "vnt"' --last 1h

@@ -8,7 +8,11 @@
 	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.vnt.app</string>
+		<string>group.top.wherewego.vntApp</string>
+	</array>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)top.wherewego.vntApp</string>
 	</array>
 </dict>
 </plist>
