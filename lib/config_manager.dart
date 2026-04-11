@@ -11,32 +11,33 @@ class ConfigManager {
 
   File? _configFile;
   Map<String, dynamic> _cache = {};
+  bool _initialized = false;
 
   /// 初始化配置文件路径
   Future<void> init() async {
+    if (_initialized) return; // 防止重复初始化
+    
     if (Platform.isWindows) {
-      // Windows: 使用程序当前目录/config/config.json
       final exePath = Platform.resolvedExecutable;
       final exeDir = path.dirname(exePath);
       final configDir = Directory(path.join(exeDir, 'config'));
       
-      // 确保 config 目录存在
       if (!await configDir.exists()) {
         await configDir.create(recursive: true);
       }
       
       _configFile = File(path.join(configDir.path, 'config.json'));
       
-      // 加载现有配置
       if (await _configFile!.exists()) {
         try {
           final content = await _configFile!.readAsString();
           _cache = json.decode(content) as Map<String, dynamic>;
         } catch (e) {
           print('加载配置文件失败: $e');
-          _cache = {};
         }
       }
+      
+      _initialized = true;
     }
   }
 

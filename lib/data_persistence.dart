@@ -8,21 +8,28 @@ import 'config_manager.dart';
 
 class DataPersistence {
   static const String dataKey = 'data-key';
-  static const String dataKeyForNative = 'data-key-native'; // 供 Android 原生代码读取的 JSON 格式
+  static const String dataKeyForNative = 'data-key-native';
   static const String vntUniqueIdKey = 'vnt-unique-id-key';
+
+  ConfigManager? _configManager;
+
+  Future<ConfigManager> _getConfigManager() async {
+    if (Platform.isWindows) {
+      _configManager ??= ConfigManager();
+      return _configManager!;
+    }
+    throw Exception('ConfigManager only for Windows');
+  }
 
   Future<void> saveData(List<NetworkConfig> configs) async {
     List<String> jsonDataList =
         configs.map((config) => jsonEncode(config.toJson())).toList();
     
     if (Platform.isWindows) {
-      // Windows: 使用本地 config.json
-      final configManager = ConfigManager();
-      await configManager.init();
+      final configManager = await _getConfigManager();
       await configManager.setStringList(dataKey, jsonDataList);
       await configManager.setString(dataKeyForNative, jsonEncode(jsonDataList));
     } else {
-      // 其他平台: 使用 shared_preferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setStringList(dataKey, jsonDataList);
       await prefs.setString(dataKeyForNative, jsonEncode(jsonDataList));
@@ -33,12 +40,9 @@ class DataPersistence {
     List<String>? jsonDataList;
     
     if (Platform.isWindows) {
-      // Windows: 从本地 config.json 读取
-      final configManager = ConfigManager();
-      await configManager.init();
+      final configManager = await _getConfigManager();
       jsonDataList = configManager.getStringList(dataKey);
     } else {
-      // 其他平台: 从 shared_preferences 读取
       final prefs = await SharedPreferences.getInstance();
       jsonDataList = prefs.getStringList(dataKey);
     }
@@ -56,8 +60,7 @@ class DataPersistence {
     String? uniqueId;
     
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init();
+      final configManager = await _getConfigManager();
       uniqueId = configManager.getString(vntUniqueIdKey);
       if (uniqueId == null || uniqueId.isEmpty) {
         uniqueId = const Uuid().v4().toString();
@@ -77,8 +80,7 @@ class DataPersistence {
 
   Future<Size?> loadWindowSize() async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init(); // 确保已初始化
+      final configManager = await _getConfigManager();
       final width = configManager.getDouble('window-width');
       final height = configManager.getDouble('window-height');
       if (width != null && height != null) {
@@ -100,8 +102,7 @@ class DataPersistence {
       return;
     }
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init(); // 确保已初始化
+      final configManager = await _getConfigManager();
       await configManager.setDouble('window-width', size.width);
       await configManager.setDouble('window-height', size.height);
     } else {
@@ -113,8 +114,7 @@ class DataPersistence {
 
   Future<Offset?> loadWindowPosition() async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init(); // 确保已初始化
+      final configManager = await _getConfigManager();
       final x = configManager.getDouble('window-x');
       final y = configManager.getDouble('window-y');
       if (x != null && y != null) {
@@ -133,8 +133,7 @@ class DataPersistence {
 
   Future<void> saveWindowPosition(Offset position) async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init(); // 确保已初始化
+      final configManager = await _getConfigManager();
       await configManager.setDouble('window-x', position.dx);
       await configManager.setDouble('window-y', position.dy);
     } else {
@@ -146,8 +145,7 @@ class DataPersistence {
 
   Future<bool?> loadCloseApp() async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init(); // 确保已初始化
+      final configManager = await _getConfigManager();
       final result = configManager.getBool('is-close-app');
       debugPrint('Windows loadCloseApp: $result');
       return result;
@@ -161,8 +159,7 @@ class DataPersistence {
 
   Future<void> saveCloseApp(bool? isClose) async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init(); // 确保已初始化
+      final configManager = await _getConfigManager();
       if (isClose == null) {
         await configManager.remove('is-close-app');
       } else {
@@ -180,8 +177,7 @@ class DataPersistence {
 
   Future<bool> loadAlwaysOnTop() async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init();
+      final configManager = await _getConfigManager();
       return configManager.getBool('is-always-on-top') ?? false;
     } else {
       final prefs = await SharedPreferences.getInstance();
@@ -191,8 +187,7 @@ class DataPersistence {
 
   Future<void> saveAlwaysOnTop(bool alwaysOnTop) async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init();
+      final configManager = await _getConfigManager();
       await configManager.setBool('is-always-on-top', alwaysOnTop);
     } else {
       final prefs = await SharedPreferences.getInstance();
@@ -202,8 +197,7 @@ class DataPersistence {
 
   Future<bool?> loadAutoStart() async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init();
+      final configManager = await _getConfigManager();
       return configManager.getBool('is-auto-start');
     } else {
       final prefs = await SharedPreferences.getInstance();
@@ -213,8 +207,7 @@ class DataPersistence {
 
   Future<void> saveAutoStart(bool autoStart) async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init();
+      final configManager = await _getConfigManager();
       await configManager.setBool('is-auto-start', autoStart);
     } else {
       final prefs = await SharedPreferences.getInstance();
@@ -224,8 +217,7 @@ class DataPersistence {
 
   Future<bool?> loadAutoConnect() async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init();
+      final configManager = await _getConfigManager();
       return configManager.getBool('is-auto-connect');
     } else {
       final prefs = await SharedPreferences.getInstance();
@@ -235,8 +227,7 @@ class DataPersistence {
 
   Future<void> saveAutoConnect(bool autoConnect) async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init();
+      final configManager = await _getConfigManager();
       await configManager.setBool('is-auto-connect', autoConnect);
     } else {
       final prefs = await SharedPreferences.getInstance();
@@ -246,8 +237,7 @@ class DataPersistence {
 
   Future<String?> loadDefaultKey() async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init();
+      final configManager = await _getConfigManager();
       return configManager.getString('default-key');
     } else {
       final prefs = await SharedPreferences.getInstance();
@@ -257,8 +247,7 @@ class DataPersistence {
 
   Future<void> saveDefaultKey(String defaultKey) async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init();
+      final configManager = await _getConfigManager();
       await configManager.setString('default-key', defaultKey);
     } else {
       final prefs = await SharedPreferences.getInstance();
@@ -268,8 +257,7 @@ class DataPersistence {
 
   Future<void> clear() async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init();
+      final configManager = await _getConfigManager();
       await configManager.clear();
     } else {
       final prefs = await SharedPreferences.getInstance();
@@ -277,11 +265,9 @@ class DataPersistence {
     }
   }
 
-  // 主题模式持久化
   Future<ThemeMode?> loadThemeMode() async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init();
+      final configManager = await _getConfigManager();
       final index = configManager.getInt('theme-mode');
       if (index != null && index >= 0 && index < ThemeMode.values.length) {
         return ThemeMode.values[index];
@@ -298,8 +284,7 @@ class DataPersistence {
 
   Future<void> saveThemeMode(ThemeMode mode) async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init();
+      final configManager = await _getConfigManager();
       await configManager.setInt('theme-mode', mode.index);
     } else {
       final prefs = await SharedPreferences.getInstance();
@@ -307,12 +292,9 @@ class DataPersistence {
     }
   }
 
-  // 自定义主题颜色持久化
-  /// 保存自定义主题颜色（保存为 ARGB 整数值）
   Future<void> saveCustomThemeColor(Color color) async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init();
+      final configManager = await _getConfigManager();
       await configManager.setInt('custom-theme-color', color.value);
     } else {
       final prefs = await SharedPreferences.getInstance();
@@ -320,11 +302,9 @@ class DataPersistence {
     }
   }
 
-  /// 加载自定义主题颜色（返回 null 表示使用默认颜色）
   Future<Color?> loadCustomThemeColor() async {
     if (Platform.isWindows) {
-      final configManager = ConfigManager();
-      await configManager.init();
+      final configManager = await _getConfigManager();
       final colorValue = configManager.getInt('custom-theme-color');
       if (colorValue != null) {
         return Color(colorValue);
@@ -348,8 +328,33 @@ class DataPersistence {
         'export_time': DateTime.now().toIso8601String(),
         'configs': configs.map((c) => c.toJson()).toList(),
       };
+      
+      // Windows平台额外导出窗口和系统配置
+      if (Platform.isWindows) {
+        final windowSize = await loadWindowSize();
+        final windowPosition = await loadWindowPosition();
+        final themeMode = await loadThemeMode();
+        final customColor = await loadCustomThemeColor();
+        final autoStart = await loadAutoStart();
+        final autoConnect = await loadAutoConnect();
+        final defaultKey = await loadDefaultKey();
+        final closeApp = await loadCloseApp();
+        final alwaysOnTop = await loadAlwaysOnTop();
+        
+        jsonData['windows_settings'] = {
+          if (windowSize != null) 'window_size': {'width': windowSize.width, 'height': windowSize.height},
+          if (windowPosition != null) 'window_position': {'x': windowPosition.dx, 'y': windowPosition.dy},
+          if (themeMode != null) 'theme_mode': themeMode.index,
+          if (customColor != null) 'custom_theme_color': customColor.value,
+          if (autoStart != null) 'auto_start': autoStart,
+          if (autoConnect != null) 'auto_connect': autoConnect,
+          if (defaultKey != null) 'default_key': defaultKey,
+          if (closeApp != null) 'close_app': closeApp,
+          'always_on_top': alwaysOnTop,
+        };
+      }
+      
       final file = File(filePath);
-      // 确保父目录存在
       final dir = file.parent;
       if (!await dir.exists()) {
         await dir.create(recursive: true);
@@ -375,6 +380,52 @@ class DataPersistence {
           .map((c) => NetworkConfig.fromJson(c))
           .toList();
       await saveData(configs);
+      
+      // Windows平台恢复窗口和系统配置
+      if (Platform.isWindows && jsonData.containsKey('windows_settings')) {
+        final winSettings = jsonData['windows_settings'] as Map<String, dynamic>;
+        
+        if (winSettings.containsKey('window_size')) {
+          final size = winSettings['window_size'];
+          await saveWindowSize(Size(size['width'], size['height']));
+        }
+        
+        if (winSettings.containsKey('window_position')) {
+          final pos = winSettings['window_position'];
+          await saveWindowPosition(Offset(pos['x'], pos['y']));
+        }
+        
+        if (winSettings.containsKey('theme_mode')) {
+          await saveThemeMode(ThemeMode.values[winSettings['theme_mode']]);
+        }
+        
+        if (winSettings.containsKey('custom_theme_color')) {
+          await saveCustomThemeColor(Color(winSettings['custom_theme_color']));
+        }
+        
+        if (winSettings.containsKey('auto_start')) {
+          await saveAutoStart(winSettings['auto_start']);
+        }
+        
+        if (winSettings.containsKey('auto_connect')) {
+          await saveAutoConnect(winSettings['auto_connect']);
+        }
+        
+        if (winSettings.containsKey('default_key')) {
+          await saveDefaultKey(winSettings['default_key']);
+        }
+        
+        if (winSettings.containsKey('close_app')) {
+          await saveCloseApp(winSettings['close_app']);
+        }
+        
+        if (winSettings.containsKey('always_on_top')) {
+          await saveAlwaysOnTop(winSettings['always_on_top']);
+        }
+        
+        debugPrint('Windows配置恢复成功');
+      }
+      
       debugPrint('配置导入成功: ${configs.length}个配置');
     } catch (e) {
       debugPrint('配置导入失败: $e');
