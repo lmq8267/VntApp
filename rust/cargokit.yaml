@@ -1,0 +1,8 @@
+# Cargokit 配置文件
+# 强制使用 Rust 1.77.2 版本（vnt的内置IP代理功能在 rust 1.77 以上版本无法使用）
+
+cargo:
+  release:
+    toolchain: "1.77.2"
+  debug:
+    toolchain: "1.77.2"

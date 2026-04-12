@@ -25,10 +25,14 @@ class Rustup {
   }
 
   void installToolchain(String toolchain) {
+    print("========================================");
+    print("🔧 正在安装 Rust 工具链: $toolchain");
+    print("========================================");
     log.info("Installing Rust toolchain: $toolchain");
     runCommand("rustup", ['toolchain', 'install', toolchain]);
     _installedToolchains
         .add(_Toolchain(toolchain, _getInstalledTargets(toolchain)));
+    print("✅ Rust 工具链 $toolchain 安装完成");
   }
 
   void installTarget(

@@ -77,6 +77,30 @@ jobs:
           channel: stable
           flutter-version: ${{ matrix.flutter-version }}
 
+      - name: 固定 Rust 版本 1.77.2
+        shell: bash
+        run: |
+          echo "========================================="
+          echo "🔧 开始配置 Rust 1.77.2"
+          echo "========================================="
+          
+          rustup set auto-self-update disable
+          rustup toolchain install 1.77.2
+          rustup default 1.77.2
+          rustup component add rust-src --toolchain 1.77.2
+          
+          echo ""
+          echo "✅ Rust 版本配置完成："
+
+          rustc -V
+          
+          echo ""
+          echo "📋 已安装的工具链："
+          
+          rustup toolchain list
+          
+          echo "========================================="
+
       - name: 缓存 Flutter 依赖
         if: matrix.NAME == 'vntApp-macOS'
         uses: actions/cache@v4
@@ -277,12 +301,33 @@ jobs:
           rustup target add aarch64-apple-darwin
           rustup target add x86_64-apple-darwin
 
+      - name: 修复 tun-rs 代码（macOS/iOS）
+        if: matrix.NAME == 'vntApp-macOS' || matrix.NAME == 'vntApp-IOS'
+        shell: bash
+        run: |
+          echo "预下载依赖以触发 tun-rs 下载"
+          cd rust
+          cargo fetch || true
+          
+          echo "修复 tun-rs size_of 导入问题"
+          TUN_FILE=$(find ~/.cargo/registry/src -name "mod.rs" -path "*/tun-rs-*/src/platform/macos/tap/mod.rs" 2>/dev/null | head -1)
+          if [ -n "$TUN_FILE" ] && [ -f "$TUN_FILE" ]; then
+            echo "找到文件: $TUN_FILE"
+            echo 'use std::mem::size_of;' | sed -i '' '35r /dev/stdin' "$TUN_FILE" || \
+            sed -i '' '35a\
+          use std::mem::size_of;' "$TUN_FILE"
+            echo "✅ 已修复"
+          else
+            echo "⚠️ 未找到 tun-rs 文件，可能还未下载"
+          fi
+          cd ..
+
       - name: 构建 macOS 应用
         if: matrix.NAME == 'vntApp-macOS'
         run: |
           # 构建 Flutter macOS 应用
           flutter pub get
-          flutter build macos --release
+          flutter build macos --release -v
 
           APP_PATH="build/macos/Build/Products/Release/vnt_app.app"
           DMG_PATH="vnt_APP.dmg"
@@ -324,6 +369,8 @@ jobs:
         run: |
           set -e  # 任何一步出错就停止
           
+          rustup target add aarch64-apple-ios
+          
           echo "0. 清理 Xcode 缓存"
           rm -rf ~/Library/Developer/Xcode/DerivedData
           rm -rf ios/Pods
@@ -335,7 +382,6 @@ jobs:
           flutter clean
 
           echo "1. 获取 Flutter 依赖"
-          rustup target add aarch64-apple-ios
           # cd rust
           # echo "1.2 测试ios库是否正常"
           # cargo check --target aarch64-apple-ios
@@ -382,6 +428,7 @@ jobs:
           path: ./artifacts
       - name: List
         run: find ./artifacts
+
 
 
 

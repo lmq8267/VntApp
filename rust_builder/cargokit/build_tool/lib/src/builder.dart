@@ -119,8 +119,16 @@ class RustBuilder {
     Rustup rustup,
   ) {
     final toolchain = _toolchain;
+    print("\n========================================");
+    print("📦 Cargokit 构建准备");
+    print("🎯 目标平台: ${target.rust}");
+    print("🔧 使用的 Rust 工具链: $toolchain");
+    print("========================================\n");
+    
     if (rustup.installedTargets(toolchain) == null) {
       rustup.installToolchain(toolchain);
+    } else {
+      print("✅ Rust 工具链 $toolchain 已安装，跳过安装步骤");
     }
     if (toolchain == 'nightly') {
       rustup.installRustSrcForNightly();
@@ -133,12 +141,19 @@ class RustBuilder {
   CargoBuildOptions? get _buildOptions =>
       environment.crateOptions.cargo[environment.configuration];
 
-  String get _toolchain => _buildOptions?.toolchain.name ?? 'stable';
+  String get _toolchain => _buildOptions?.toolchain ?? 'stable';
 
   /// Returns the path of directory containing build artifacts.
   Future<String> build() async {
     final extraArgs = _buildOptions?.flags ?? [];
     final manifestPath = path.join(environment.manifestDir, 'Cargo.toml');
+    
+    print("\n========================================");
+    print("🚀 开始 Rust 构建");
+    print("🔧 使用工具链: $_toolchain");
+    print("📝 构建命令: rustup run $_toolchain cargo build");
+    print("========================================\n");
+    
     runCommand(
       'rustup',
       [
@@ -159,6 +174,9 @@ class RustBuilder {
       ],
       environment: await _buildEnvironment(),
     );
+    
+    print("\n✅ Rust 构建完成\n");
+    
     return path.join(
       environment.targetTempDir,
       target.rust,

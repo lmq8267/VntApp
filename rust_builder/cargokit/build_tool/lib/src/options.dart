@@ -54,7 +54,7 @@ enum Toolchain {
 }
 
 class CargoBuildOptions {
-  final Toolchain toolchain;
+  final String toolchain;  // 改为 String 以支持版本号
   final List<String> flags;
 
   CargoBuildOptions({
@@ -62,16 +62,21 @@ class CargoBuildOptions {
     required this.flags,
   });
 
-  static Toolchain _toolchainFromNode(YamlNode node) {
+  static String _toolchainFromNode(YamlNode node) {  // 返回类型改为 String
     if (node case YamlScalar(value: String name)) {
-      final toolchain =
+      // 先检查是否是枚举值
+      final toolchainEnum =
           Toolchain.values.firstWhereOrNull((element) => element.name == name);
-      if (toolchain != null) {
-        return toolchain;
+      if (toolchainEnum != null) {
+        return name;
+      }
+      // 支持具体版本号格式（如 "1.77.0" 或 "1.77"）
+      if (RegExp(r'^\d+\.\d+(\.\d+)?$').hasMatch(name)) {
+        return name;
       }
     }
     throw SourceSpanException(
-        'Unknown toolchain. Must be one of ${Toolchain.values.map((e) => e.name)}.',
+        'Unknown toolchain. Must be one of ${Toolchain.values.map((e) => e.name)} or a version number like "1.77.0".',
         node.span);
   }
 
@@ -79,7 +84,7 @@ class CargoBuildOptions {
     if (node is! YamlMap) {
       throw SourceSpanException('Cargo options must be a map', node.span);
     }
-    Toolchain toolchain = Toolchain.stable;
+    String toolchain = Toolchain.stable.name;  // 改为 String，默认值用 .name
     List<String> flags = [];
     for (final MapEntry(:key, :value) in node.nodes.entries) {
       if (key case YamlScalar(value: 'toolchain')) {
@@ -221,10 +226,22 @@ class CargokitCrateOptions {
   }) {
     final uri = Uri.file(path.join(manifestDir, "cargokit.yaml"));
     final file = File.fromUri(uri);
+    
+    print("\n========================================");
+    print("📄 正在加载 Cargokit 配置");
+    print("📂 配置文件路径: ${uri.path}");
+    
     if (file.existsSync()) {
+      print("✅ 找到 cargokit.yaml 配置文件");
       final contents = loadYamlNode(file.readAsStringSync(), sourceUrl: uri);
-      return parse(contents);
+      final options = parse(contents);
+      print("🔧 Release 工具链: ${options.cargo[BuildConfiguration.release]?.toolchain ?? 'stable (默认)'}");
+      print("🔧 Debug 工具链: ${options.cargo[BuildConfiguration.debug]?.toolchain ?? 'stable (默认)'}");
+      print("========================================\n");
+      return options;
     } else {
+      print("⚠️  未找到 cargokit.yaml，使用默认配置 (stable)");
+      print("========================================\n");
       return CargokitCrateOptions();
     }
   }
