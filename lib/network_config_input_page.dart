@@ -21,7 +21,11 @@ class _NetworkConfigInputPageState extends State<NetworkConfigInputPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _groupNumberController = TextEditingController();
-  final _deviceNameController = TextEditingController();
+  final _deviceNameController = TextEditingController(
+      text: () {
+        String version = Platform.operatingSystemVersion.replaceAll('"', '').trim();
+        return version.length > 64 ? version.substring(0, 64) : version;
+      }());
   final _virtualIPv4Controller = TextEditingController();
   final _localDevController = TextEditingController();
   final _serverAddressController = TextEditingController();
@@ -62,7 +66,6 @@ class _NetworkConfigInputPageState extends State<NetworkConfigInputPage> {
   @override
   void initState() {
     super.initState();
-    _initializeDeviceName();
     getDeviceUniqueId();
     if (widget.config != null) {
       _loadConfig(widget.config!);
@@ -86,30 +89,6 @@ class _NetworkConfigInputPageState extends State<NetworkConfigInputPage> {
     }
     if (_portGroupControllers.isEmpty) {
       _portGroupControllers.add(TextEditingController());
-    }
-  }
-
-  Future<void> _initializeDeviceName() async {
-    try {
-      String version = Platform.operatingSystemVersion.replaceAll('"', '').trim();
-      
-      try {
-        final hostname = await Future.microtask(() => Platform.localHostname)
-            .timeout(const Duration(seconds: 2));
-        if (hostname.isNotEmpty) {
-          version = '$hostname-$version';
-        }
-      } catch (e) {
-        // 超时或获取失败，使用构建号
-      }
-      
-      final deviceName = version.length > 64 ? version.substring(0, 64) : version;
-      
-      if (mounted) {
-        _deviceNameController.text = deviceName;
-      }
-    } catch (e) {
-      // 构建号也获取失败，保持为空
     }
   }
 
@@ -299,6 +278,7 @@ class _NetworkConfigInputPageState extends State<NetworkConfigInputPage> {
     }
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Text(
           '组网参数配置',
