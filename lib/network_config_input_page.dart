@@ -299,7 +299,6 @@ class _NetworkConfigInputPageState extends State<NetworkConfigInputPage> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Text(
           '组网参数配置',
