@@ -106,9 +106,7 @@ class _NetworkConfigInputPageState extends State<NetworkConfigInputPage> {
       final deviceName = version.length > 64 ? version.substring(0, 64) : version;
       
       if (mounted) {
-        setState(() {
-          _deviceNameController.text = deviceName;
-        });
+        _deviceNameController.text = deviceName;
       }
     } catch (e) {
       // 构建号也获取失败，保持为空
