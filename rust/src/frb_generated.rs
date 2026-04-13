@@ -1694,7 +1694,9 @@ impl SseDecode for crate::api::vnt_api::RustErrorType {
             3 => crate::api::vnt_api::RustErrorType::IpAlreadyExists,
             4 => crate::api::vnt_api::RustErrorType::InvalidIp,
             5 => crate::api::vnt_api::RustErrorType::LocalIpExists,
-            6 => crate::api::vnt_api::RustErrorType::Unknown,
+            6 => crate::api::vnt_api::RustErrorType::FailedToCreateDevice,
+            7 => crate::api::vnt_api::RustErrorType::Warn,
+            8 => crate::api::vnt_api::RustErrorType::Unknown,
             _ => unreachable!("Invalid variant for RustErrorType: {}", inner),
         };
     }
@@ -2080,7 +2082,9 @@ impl flutter_rust_bridge::IntoDart for crate::api::vnt_api::RustErrorType {
             Self::IpAlreadyExists => 3.into_dart(),
             Self::InvalidIp => 4.into_dart(),
             Self::LocalIpExists => 5.into_dart(),
-            Self::Unknown => 6.into_dart(),
+            Self::FailedToCreateDevice => 6.into_dart(),
+            Self::Warn => 7.into_dart(),
+            Self::Unknown => 8.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -2610,7 +2614,9 @@ impl SseEncode for crate::api::vnt_api::RustErrorType {
                 crate::api::vnt_api::RustErrorType::IpAlreadyExists => 3,
                 crate::api::vnt_api::RustErrorType::InvalidIp => 4,
                 crate::api::vnt_api::RustErrorType::LocalIpExists => 5,
-                crate::api::vnt_api::RustErrorType::Unknown => 6,
+                crate::api::vnt_api::RustErrorType::FailedToCreateDevice => 6,
+                crate::api::vnt_api::RustErrorType::Warn => 7,
+                crate::api::vnt_api::RustErrorType::Unknown => 8,
                 _ => {
                     unimplemented!("");
                 }

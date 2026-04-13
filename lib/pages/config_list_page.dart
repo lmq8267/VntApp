@@ -914,8 +914,11 @@ class _ConfigListPageState extends State<ConfigListPage> {
   }
 
   void _handleConnectionError(RustErrorInfo msg, String configName, String itemKey) {
-    vntManager.remove(itemKey);
-    setState(() {});
+    // Warn 类型不断开连接，只显示警告
+    if (msg.code != RustErrorType.warn) {
+      vntManager.remove(itemKey);
+      setState(() {});
+    }
 
     String errorMsg;
     switch (msg.code) {
@@ -933,6 +936,12 @@ class _ConfigListPageState extends State<ConfigListPage> {
         break;
       case RustErrorType.localIpExists:
         errorMsg = '[$configName] 虚拟IP地址和本地IP冲突';
+        break;
+      case RustErrorType.failedToCreateDevice:
+        errorMsg = '[$configName] 虚拟网卡创建失败';
+        break;
+      case RustErrorType.warn:
+        errorMsg = msg.msg ?? '[$configName] 警告';
         break;
       default:
         errorMsg = '[$configName] 发生未知错误: ${msg.msg}';

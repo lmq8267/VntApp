@@ -232,6 +232,8 @@ enum RustErrorType {
   ipAlreadyExists,
   invalidIp,
   localIpExists,
+  failedToCreateDevice,
+  warn,
   unknown,
   ;
 }

@@ -263,6 +263,12 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       case RustErrorType.localIpExists:
         errorMessage = '[$configName] 本地IP已存在';
         break;
+      case RustErrorType.failedToCreateDevice:
+        errorMessage = '[$configName] 虚拟网卡创建失败';
+        break;
+      case RustErrorType.warn:
+        errorMessage = '[$configName] 警告';
+        break;
       default:
         errorMessage = '[$configName] 未知错误';
     }

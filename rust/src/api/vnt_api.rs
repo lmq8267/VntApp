@@ -686,6 +686,8 @@ pub enum RustErrorType {
     IpAlreadyExists,
     InvalidIp,
     LocalIpExists,
+    FailedToCreateDevice,
+    Warn,
     Unknown,
 }
 impl From<ErrorType> for RustErrorType {
@@ -697,6 +699,8 @@ impl From<ErrorType> for RustErrorType {
             ErrorType::IpAlreadyExists => RustErrorType::IpAlreadyExists,
             ErrorType::InvalidIp => RustErrorType::InvalidIp,
             ErrorType::LocalIpExists => RustErrorType::LocalIpExists,
+            ErrorType::FailedToCrateDevice => RustErrorType::FailedToCreateDevice,
+            ErrorType::Warn => RustErrorType::Warn,
             ErrorType::Unknown => RustErrorType::Unknown,
             _ => RustErrorType::Unknown,
         }
