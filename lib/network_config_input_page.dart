@@ -616,8 +616,8 @@ class _NetworkConfigInputPageState extends State<NetworkConfigInputPage> {
                       const SizedBox(height: 16),
                       CustomTooltipTextField(
                         controller: _localDevController,
-                        labelText: '本地网卡名称',
-                        tooltipMessage: '(指定网络接口名称，例如：\nLinux: eth0、wlan0 等\nWindows: 本地连接、WLAN 等\nmacOS: en0、en1 等\nAndroid: wlan0 (Wi-Fi) 或 rmnet_data0 (移动数据) 等\n不填则由程序自动获取选择)',
+                        labelText: '本地物理网卡',
+                        tooltipMessage: '指定用于组网通信的物理网卡（留空则由系统自动路由）\n\n支持格式：\n• Windows: 友好名称（如"以太网"、"WLAN"）、索引号\n• Linux: 网卡名（如 eth0、wlan0）\n• macOS: 网卡名（如 en0、en1）\n• Android: 网卡名（如 wlan0、rmnet_data0）\n\n建议：\n• 一般情况留空即可\n• 多网卡环境或需要 IP 代理和出口节点功能时才需要指定',
                         maxLength: 50,
                         validator: null,
                       ),

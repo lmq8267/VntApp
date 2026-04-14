@@ -3946,7 +3946,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       _buildDeviceInfoItem(isDark, '设备名称', config.deviceName),
                       _buildDeviceInfoItem(isDark, '虚拟 IP', config.virtualIPv4.isEmpty ? '自动分配' : config.virtualIPv4),
                       _buildDeviceInfoItem(isDark, '设备 ID', config.deviceID.isEmpty ? '自动生成' : config.deviceID),
-                      _buildDeviceInfoItem(isDark, '本地网卡', config.localDev.isEmpty ? '自动选择' : config.localDev),
+                      _buildDeviceInfoItem(isDark, '本地物理网卡', config.localDev.isEmpty ? '系统自动路由' : config.localDev),
 
                       const SizedBox(height: 16),
 
@@ -3985,6 +3985,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       _buildDeviceInfoItem(isDark, '优先延迟', config.firstLatency ? '已启用' : '未启用'),
                       _buildDeviceInfoItem(isDark, '禁用代理', config.noInIpProxy ? '是' : '否'),
                       _buildDeviceInfoItem(isDark, '允许 WireGuard', config.allowWg ? '是' : '否'),
+                      _buildDeviceInfoItem(isDark, '禁用客户端中继', config.disableRelay ? '是' : '否'),
 
                       if (config.inIps.isNotEmpty || config.outIps.isNotEmpty || config.portMappings.isNotEmpty) ...[
                         const SizedBox(height: 16),
