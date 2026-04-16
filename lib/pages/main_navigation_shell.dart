@@ -181,6 +181,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             // 更新系统托盘
             await SystemTrayManager().updateMenu();
             await SystemTrayManager().updateTooltip();
+          } else {
+            // 重连成功（onece 已经是 false，说明之前已经连接过）
+            showTopToast(context, '[${config.configName}] 已重新连接到服务器', isSuccess: true);
           }
         } else if (msg == 'stop') {
           vntManager.remove(config.itemKey);

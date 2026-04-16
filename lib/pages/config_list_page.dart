@@ -771,6 +771,9 @@ class _ConfigListPageState extends State<ConfigListPage> {
             // 更新系统托盘
             SystemTrayManager().updateMenu();
             SystemTrayManager().updateTooltip();
+          } else {
+            // 重连成功
+            showTopToast(context, '[$configName] 已重新连接到服务器', isSuccess: true);
           }
         } else if (msg == 'stop') {
           vntManager.remove(itemKey);
