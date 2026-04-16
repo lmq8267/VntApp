@@ -199,6 +199,17 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           await SystemTrayManager().updateTooltip();
         }
       } else if (msg is RustErrorInfo) {
+        // Disconnect 和 Warn 类型不销毁连接，Rust 层会自动重连
+        if (msg.code == RustErrorType.disconnect || msg.code == RustErrorType.warn) {
+          if (onece) {
+            onece = false;
+            Navigator.of(context).pop(); // 关闭连接中对话框
+          }
+          _handleConnectionError(msg, config.configName);
+          return;
+        }
+        
+        // 其他致命错误才销毁连接
         if (onece) {
           onece = false;
           Navigator.of(context).pop(); // 关闭连接中对话框
@@ -249,7 +260,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         errorMessage = '[$configName] Token错误';
         break;
       case RustErrorType.disconnect:
-        errorMessage = '[$configName] 连接断开';
+        errorMessage = '[$configName] 与服务器发生断连，正在尝试重连...';
         break;
       case RustErrorType.addressExhausted:
         errorMessage = '[$configName] 地址已用尽';

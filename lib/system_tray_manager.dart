@@ -185,8 +185,20 @@ class SystemTrayManager {
           // 连接成功，更新托盘
           updateMenu();
           updateTooltip();
-        } else if (message == 'stop' || message is Map) {
+        } else if (message == 'stop') {
           // 连接失败或停止，恢复UI状态
+          if (!connectionSuccessful) {
+            updateMenu();
+            updateTooltip();
+          }
+        } else if (message is RustErrorInfo) {
+          // Disconnect 和 Warn 类型不销毁连接，Rust 层会自动重连
+          if (message.code == RustErrorType.disconnect || message.code == RustErrorType.warn) {
+            debugPrint('系统托盘：连接错误（非致命） - ${message.msg}');
+            // 不销毁连接，只记录日志
+            return;
+          }
+          // 其他致命错误，恢复UI状态
           if (!connectionSuccessful) {
             updateMenu();
             updateTooltip();

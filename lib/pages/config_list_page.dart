@@ -790,6 +790,17 @@ class _ConfigListPageState extends State<ConfigListPage> {
           SystemTrayManager().updateTooltip();
         }
       } else if (msg is RustErrorInfo) {
+        // Disconnect 和 Warn 类型不销毁连接，Rust 层会自动重连
+        if (msg.code == RustErrorType.disconnect || msg.code == RustErrorType.warn) {
+          if (onece) {
+            onece = false;
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          }
+          _handleConnectionError(msg, configName, itemKey);
+          return;
+        }
+        
+        // 其他致命错误才销毁连接
         if (onece) {
           onece = false;
           Navigator.of(context).popUntil((route) => route.isFirst);
@@ -915,7 +926,7 @@ class _ConfigListPageState extends State<ConfigListPage> {
 
   void _handleConnectionError(RustErrorInfo msg, String configName, String itemKey) {
     // Warn 类型不断开连接，只显示警告
-    if (msg.code != RustErrorType.warn) {
+    if (msg.code != RustErrorType.warn && msg.code != RustErrorType.disconnect) {
       vntManager.remove(itemKey);
       setState(() {});
     }
@@ -924,6 +935,9 @@ class _ConfigListPageState extends State<ConfigListPage> {
     switch (msg.code) {
       case RustErrorType.tokenError:
         errorMsg = '[$configName] token错误';
+        break;
+      case RustErrorType.disconnect:
+        errorMsg = '[$configName] 与服务器发生断连，正在尝试重连...';
         break;
       case RustErrorType.addressExhausted:
         errorMsg = '[$configName] IP地址用尽';
