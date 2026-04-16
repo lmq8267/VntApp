@@ -227,19 +227,20 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         await SystemTrayManager().updateMenu();
         await SystemTrayManager().updateTooltip();
       } else if (msg is RustConnectInfo) {
-        if (onece && msg.count > BigInt.from(60)) {
-          onece = false;
-          Navigator.of(context).pop(); // 关闭连接中对话框
-          vntManager.remove(config.itemKey);
-          showTopToast(context, '[${config.configName}] 连接超时 ${msg.address}', isSuccess: false);
-          // 连接超时，更新磁贴和小组件状态
-          if (Platform.isAndroid) {
-            VntAppCall.updateWidgetAndTile(vntManager.hasConnection());
-          }
-          // 更新系统托盘
-          await SystemTrayManager().updateMenu();
-          await SystemTrayManager().updateTooltip();
-        }
+        // 移除 60 次限制，持续重连直到成功或手动停止
+        // if (onece && msg.count > BigInt.from(60)) {
+        //   onece = false;
+        //   Navigator.of(context).pop(); // 关闭连接中对话框
+        //   vntManager.remove(config.itemKey);
+        //   showTopToast(context, '[${config.configName}] 连接超时 ${msg.address}', isSuccess: false);
+        //   // 连接超时，更新磁贴和小组件状态
+        //   if (Platform.isAndroid) {
+        //     VntAppCall.updateWidgetAndTile(vntManager.hasConnection());
+        //   }
+        //   // 更新系统托盘
+        //   await SystemTrayManager().updateMenu();
+        //   await SystemTrayManager().updateTooltip();
+        // }
       }
     });
 
