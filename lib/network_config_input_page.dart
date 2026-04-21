@@ -183,7 +183,7 @@ class _NetworkConfigInputPageState extends State<NetworkConfigInputPage> {
         }
       }
       NetworkConfig config = NetworkConfig(
-        itemKey: DateTime.now().millisecondsSinceEpoch.toString(),
+        itemKey: widget.config?.itemKey ?? DateTime.now().millisecondsSinceEpoch.toString(),
         configName: name,
         token: _groupNumberController.text,
         deviceName: _deviceNameController.text,
