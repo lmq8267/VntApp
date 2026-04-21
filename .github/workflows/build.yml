@@ -447,6 +447,7 @@ jobs:
             -v "${{ github.workspace }}:/workspace" \
             -v "${HOME}/.pub-cache:/root/.pub-cache" \
             -e PUB_CACHE=/root/.pub-cache \
+            -e APPIMAGETOOL_ARCH=${{ matrix.APPIMAGE_ARCH }} \
             -w /workspace \
             ${{ matrix.DOCKER_IMAGE }} \
             bash /workspace/linux/build_linux_appimage.sh \
