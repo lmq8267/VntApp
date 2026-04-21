@@ -53,13 +53,13 @@ jobs:
             APPIMAGE_ARCH: x86_64
             BUNDLE_DIR: build/linux/x64/release/bundle
 
-          - NAME: vntApp-linux-arm64
-            OS: ubuntu-latest
-            flutter-version: 3.24.5
-            DOCKER_PLATFORM: linux/arm64
-            DOCKER_IMAGE: arm64v8/ubuntu:18.04
-            APPIMAGE_ARCH: aarch64
-            BUNDLE_DIR: build/linux/arm64/release/bundle
+          #- NAME: vntApp-linux-arm64
+          #  OS: ubuntu-latest
+          #  flutter-version: 3.24.5
+          #  DOCKER_PLATFORM: linux/arm64
+          #  DOCKER_IMAGE: arm64v8/ubuntu:18.04
+          #  APPIMAGE_ARCH: aarch64
+          #  BUNDLE_DIR: build/linux/arm64/release/bundle
 
     runs-on: ${{ matrix.OS }}
     steps:
@@ -121,7 +121,7 @@ jobs:
 
       - name: 缓存 Flutter 依赖
         if: matrix.NAME == 'vntApp-macOS'
-        uses: actions/cache@v4
+        uses: actions/cache@main
         with:
           path: ~/.pub-cache
           key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.yaml') }}
@@ -130,7 +130,7 @@ jobs:
 
       - name: 缓存 Flutter / Pub / Gradle（Windows 7 引擎版）
         if: matrix.NAME == 'vntApp-windows'
-        uses: actions/cache@v4
+        uses: actions/cache@main
         with:
           path: |
             ~/.pub-cache
@@ -146,7 +146,7 @@ jobs:
 
       - name: 缓存 Flutter / Pub / Gradle（标准版）
         if: matrix.NAME != 'vntApp-windows'
-        uses: actions/cache@v4
+        uses: actions/cache@main
         with:
           path: |
             ~/.pub-cache
@@ -437,7 +437,7 @@ jobs:
 
       - name: 设置 QEMU（Linux arm64 跨架构）
         if: startsWith(matrix.NAME, 'vntApp-linux')
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@master
 
       - name: 构建 Linux AppImage（Docker Ubuntu 18.04）
         if: startsWith(matrix.NAME, 'vntApp-linux')
@@ -454,7 +454,7 @@ jobs:
               ${{ matrix.BUNDLE_DIR }} ${{ matrix.APPIMAGE_ARCH }}
 
       - name: Archive artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@main
         with:
           name: ${{ matrix.NAME }}
           path: |
