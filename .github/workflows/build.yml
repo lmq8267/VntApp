@@ -274,29 +274,38 @@ jobs:
          mv -f build/app/outputs/apk/release/app-release.apk app-release.apk
          #mv -f build/app/outputs/flutter-apk/app-release.apk app-release.apk
 
-         password=vntAPP
-         keytool -genkeypair \
-          -v \
-          -keystore keystore.jks \
-          -storepass "$password" \
-          -alias key \
-          -keypass "$password" \
-          -keyalg RSA \
-          -keysize 2048 \
-          -validity 10000 \
-          -dname "CN=Android, OU=Android, O=Android, L=BeiJing, ST=BeiJing, C=CN"
+         if [ -n "${{ secrets.KEYSTORE_PASSWORD }}" ]; && [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+           echo "使用仓库密钥签名"
+           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
+           keystore_path="keystore.jks"
+           password="${{ secrets.KEYSTORE_PASSWORD }}"
+         else
+           echo "生成临时密钥签名"
+           keystore_path="keystore.jks"
+           password=vntAPP
+           keytool -genkeypair \
+            -v \
+            -keystore "$keystore_path" \
+            -storepass "$password" \
+            -alias key \
+            -keypass "$password" \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android, OU=Android, O=Android, L=BeiJing, ST=BeiJing, C=CN"
+         fi
           
-          /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign \
-            --ks keystore.jks \
-            --ks-key-alias key \
-            --ks-pass pass:$password \
-            --key-pass pass:$password \
-            --out vntApp-android.apk \
-            --in app-release.apk \
-            --v1-signing-enabled true \
-            --v2-signing-enabled true \
-            --v3-signing-enabled true \
-            --v4-signing-enabled true
+         /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign \
+           --ks "$keystore_path" \
+           --ks-key-alias key \
+           --ks-pass pass:$password \
+           --key-pass pass:$password \
+           --out vntApp-android.apk \
+           --in app-release.apk \
+           --v1-signing-enabled true \
+           --v2-signing-enabled true \
+           --v3-signing-enabled true \
+           --v4-signing-enabled true
 
       - name: 构建 Windows vntAPP
         if: matrix.NAME == 'vntApp-windows'

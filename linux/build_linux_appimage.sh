@@ -42,8 +42,9 @@ flutter pub get
 flutter build linux --release -v
 
 step "下载并解压 appimagetool"
+APPIMAGETOOL_ARCH=$([ "$APPIMAGE_ARCH" = "aarch64" ] && echo "aarch64" || echo "x86_64")
 wget -q -O appimagetool.AppImage \
-  https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+  https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-${APPIMAGETOOL_ARCH}.AppImage
 chmod +x appimagetool.AppImage
 ./appimagetool.AppImage --appimage-extract
 mv squashfs-root appimagetool-extracted
