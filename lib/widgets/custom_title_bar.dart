@@ -30,14 +30,35 @@ class CustomTitleBar extends StatefulWidget {
   State<CustomTitleBar> createState() => _CustomTitleBarState();
 }
 
-class _CustomTitleBarState extends State<CustomTitleBar> {
+class _CustomTitleBarState extends State<CustomTitleBar> with WindowListener {
   bool _isMaximized = false;
   bool _isAlwaysOnTop = false;
 
   @override
   void initState() {
     super.initState();
+    windowManager.addListener(this);
     _checkWindowState();
+  }
+
+  @override
+  void dispose() {
+    windowManager.removeListener(this);
+    super.dispose();
+  }
+
+  @override
+  void onWindowMaximize() {
+    // Linux 下不使用回调，避免和强制状态冲突导致闪烁
+    if (Platform.isLinux) return;
+    setState(() => _isMaximized = true);
+  }
+
+  @override
+  void onWindowUnmaximize() {
+    // Linux 下不使用回调，避免和强制状态冲突导致闪烁
+    if (Platform.isLinux) return;
+    setState(() => _isMaximized = false);
   }
 
   Future<void> _checkWindowState() async {
@@ -147,10 +168,28 @@ class _CustomTitleBarState extends State<CustomTitleBar> {
             onPressed: () async {
               if (_isMaximized) {
                 await windowManager.unmaximize();
+                // Linux 下强制更新状态
+                if (Platform.isLinux) {
+                  setState(() => _isMaximized = false);
+                  // 延迟刷新窗口，消除重影和黑条
+                  Future.delayed(const Duration(milliseconds: 100), () async {
+                    if (mounted) {
+                      await windowManager.focus();
+                      setState(() {}); // 强制重绘
+                    }
+                  });
+                }
               } else {
                 await windowManager.maximize();
+                // Linux 下强制更新状态
+                if (Platform.isLinux) {
+                  setState(() => _isMaximized = true);
+                }
               }
-              _checkWindowState();
+              // 其他平台检查状态
+              if (!Platform.isLinux) {
+                _checkWindowState();
+              }
             },
             isDark: isDark,
           ),

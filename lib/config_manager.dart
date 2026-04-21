@@ -13,6 +13,9 @@ class ConfigManager {
   Map<String, dynamic> _cache = {};
   bool _initialized = false;
 
+  /// 获取配置文件路径
+  String get configFilePath => _configFile?.path ?? 'config.json (未初始化)';
+
   /// 初始化配置文件路径
   Future<void> init() async {
     if (_initialized) return; // 防止重复初始化

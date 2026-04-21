@@ -90,7 +90,8 @@ Future<void> main() async {
     }
 
     // 调用Rust层初始化日志
-    initLogWithPath(logDir: logDir);
+    final configPath = await DataPersistence().getConfigFilePath();
+    initLogWithPath(logDir: logDir, configPath: configPath);
     debugPrint('日志系统初始化成功，日志目录: $logDir');
   } catch (e) {
     debugPrint('初始化日志系统失败: $e');
@@ -400,7 +401,6 @@ class _MainAppState extends State<MainApp> with WindowListener {
 
   @override
   void onWindowClose() async {
-    debugPrint('onWindowClose 被调用');
     
     // macOS 显示特殊的确认对话框（说明由于安全限制无法最小化）
     if (Platform.isMacOS) {
@@ -409,7 +409,8 @@ class _MainAppState extends State<MainApp> with WindowListener {
         // 退出应用：先断开连接再关闭
         await vntManager.removeAll();
         windowManager.setPreventClose(false);
-        appWindow.close();
+        await windowManager.destroy();
+        exit(0);
       }
       // 如果用户点击取消，什么都不做（窗口保持打开）
       return;
@@ -417,15 +418,10 @@ class _MainAppState extends State<MainApp> with WindowListener {
 
     // Windows 和 Linux 保持原有的确认逻辑
     var isClose = await DataPersistence().loadCloseApp();
-    debugPrint('loadCloseApp 返回: $isClose');
     
     if (isClose == null) {
-      debugPrint('显示关闭确认对话框');
       final shouldClose = await _showCloseConfirmationDialog();
-      debugPrint('用户选择: $shouldClose');
       isClose = shouldClose;
-    } else {
-      debugPrint('使用保存的选择: $isClose');
     }
     
     if (isClose != null) {
@@ -434,14 +430,18 @@ class _MainAppState extends State<MainApp> with WindowListener {
         debugPrint('退出应用');
         await vntManager.removeAll();
         windowManager.setPreventClose(false);
-        appWindow.close();
+        if (Platform.isLinux) {
+          // Linux 强制退出进程，避免残留
+          await windowManager.destroy();
+          exit(0);
+        } else {
+          appWindow.close();
+        }
       } else {
         // 隐藏窗口：不断开连接
         debugPrint('隐藏到托盘');
         appWindow.hide();
       }
-    } else {
-      debugPrint('用户取消操作');
     }
   }
 
@@ -593,7 +593,23 @@ class _MainAppState extends State<MainApp> with WindowListener {
 }
 
 Future<void> initSystemTray() async {
-  String path = Platform.isWindows ? 'assets/app_icon.ico' : 'assets/app_icon.png';
+  String path;
+  
+  if (Platform.isLinux) {
+    // Linux 复制到 /tmp 并设置普通用户可读权限
+    try {
+      final iconFile = File('/tmp/vnt_app_icon.png');
+      final byteData = await rootBundle.load('assets/app_icon.png');
+      await iconFile.writeAsBytes(byteData.buffer.asUint8List());
+      // 设置权限为 644 (所有用户可读)
+      await Process.run('chmod', ['644', iconFile.path]);
+      path = iconFile.path;
+    } catch (e) {
+      path = 'assets/app_icon.png'; // 降级
+    }
+  } else {
+    path = Platform.isWindows ? 'assets/app_icon.ico' : 'assets/app_icon.png';
+  }
 
   // 初始化系统托盘
   await systemTray.initSystemTray(

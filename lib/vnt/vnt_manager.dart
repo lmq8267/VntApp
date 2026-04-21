@@ -466,9 +466,10 @@ class VntAppCall {
     return await VntAppCall.channel.invokeMethod('stopVpn');
   }
 
-  /// 更新磁贴和小组件状态
+  /// 更新磁贴和小组件状态（仅 iOS/Android）
   /// @param isConnected 是否已连接
   static Future<void> updateWidgetAndTile(bool isConnected) async {
+    if (!Platform.isIOS && !Platform.isAndroid) return;
     try {
       await VntAppCall.channel.invokeMethod('updateWidgetAndTile', {
         'isConnected': isConnected,

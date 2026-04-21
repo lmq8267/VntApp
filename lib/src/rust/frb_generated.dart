@@ -126,7 +126,7 @@ abstract class RustLibApi extends BaseApi {
 
   Future<void> crateApiVntApiInitApp();
 
-  void crateApiVntApiInitLogWithPath({required String logDir});
+  void crateApiVntApiInitLogWithPath({required String logDir, required String configPath});
 
   Future<VntApi> crateApiVntApiVntInit(
       {required VntConfig vntConfig, required VntApiCallback call});
@@ -668,11 +668,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  void crateApiVntApiInitLogWithPath({required String logDir}) {
+  void crateApiVntApiInitLogWithPath({required String logDir, required String configPath}) {
     return handler.executeSync(SyncTask(
       callFfi: () {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(logDir, serializer);
+        sse_encode_String(configPath, serializer);
         return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19)!;
       },
       codec: SseCodec(
@@ -680,7 +681,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         decodeErrorData: sse_decode_AnyhowException,
       ),
       constMeta: kCrateApiVntApiInitLogWithPathConstMeta,
-      argValues: [logDir],
+      argValues: [logDir, configPath],
       apiImpl: this,
     ));
   }

@@ -47,8 +47,9 @@ pub fn init_app() {
 
 /// 初始化日志系统，支持所有平台
 /// log_dir: 日志目录路径，例如 "logs" 或 "/data/data/app/logs"
+/// config_path: 持久化配置文件路径（用于打印到日志）
 #[flutter_rust_bridge::frb(sync)]
-pub fn init_log_with_path(log_dir: String) -> anyhow::Result<()> {
+pub fn init_log_with_path(log_dir: String, config_path: String) -> anyhow::Result<()> {
     use log::LevelFilter;
     use log4rs::append::rolling_file::policy::compound::roll::fixed_window::FixedWindowRoller;
     use log4rs::append::rolling_file::policy::compound::trigger::size::SizeTrigger;
@@ -99,6 +100,7 @@ pub fn init_log_with_path(log_dir: String) -> anyhow::Result<()> {
     log4rs::init_config(config).context("初始化日志系统失败")?;
 
     log::info!("日志系统初始化成功，日志目录: {}", log_dir);
+    log::info!("持久化配置路径: {}", config_path);
     Ok(())
 }
 

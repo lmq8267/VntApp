@@ -933,10 +933,11 @@ fn wire__crate__api__vnt_api__init_log_with_path_impl(
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_log_dir = <String>::sse_decode(&mut deserializer);
+            let api_config_path = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                 (move || {
-                    let output_ok = crate::api::vnt_api::init_log_with_path(api_log_dir)?;
+                    let output_ok = crate::api::vnt_api::init_log_with_path(api_log_dir, api_config_path)?;
                     Ok(output_ok)
                 })(),
             )
