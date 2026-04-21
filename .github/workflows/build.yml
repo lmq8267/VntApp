@@ -274,7 +274,7 @@ jobs:
          mv -f build/app/outputs/apk/release/app-release.apk app-release.apk
          #mv -f build/app/outputs/flutter-apk/app-release.apk app-release.apk
 
-         if [ -n "${{ secrets.KEYSTORE_PASSWORD }}" ]; && [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+         if [ -n "${{ secrets.KEYSTORE_PASSWORD }}" ] && [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
            echo "使用仓库密钥签名"
            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
            keystore_path="keystore.jks"
