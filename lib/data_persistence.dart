@@ -36,6 +36,42 @@ class DataPersistence {
     }
   }
 
+  String _newItemKey(Set<String> usedItemKeys) {
+    var timestamp = DateTime.now().millisecondsSinceEpoch;
+    var itemKey = timestamp.toString();
+    while (usedItemKeys.contains(itemKey)) {
+      timestamp++;
+      itemKey = timestamp.toString();
+    }
+    return itemKey;
+  }
+
+  Map<String, String> _ensureUniqueImportedItemKeys(
+    List<NetworkConfig> importedConfigs, {
+    Iterable<String> existingItemKeys = const [],
+  }) {
+    final usedItemKeys = existingItemKeys
+        .where((itemKey) => itemKey.isNotEmpty)
+        .toSet();
+    final replacedItemKeys = <String, String>{};
+
+    for (final config in importedConfigs) {
+      final importedItemKey = config.itemKey;
+      if (importedItemKey.isEmpty || usedItemKeys.contains(importedItemKey)) {
+        final newItemKey = _newItemKey(usedItemKeys);
+        config.itemKey = newItemKey;
+        if (importedItemKey.isNotEmpty) {
+          replacedItemKeys[importedItemKey] = newItemKey;
+        }
+        usedItemKeys.add(newItemKey);
+      } else {
+        usedItemKeys.add(importedItemKey);
+      }
+    }
+
+    return replacedItemKeys;
+  }
+
   Future<List<NetworkConfig>> loadData() async {
     List<String>? jsonDataList;
     
@@ -376,9 +412,15 @@ class DataPersistence {
       }
       final content = await file.readAsString();
       final jsonData = jsonDecode(content);
+      final existingConfigs = await loadData();
+      final existingItemKeys = existingConfigs.map((config) => config.itemKey);
       final configs = (jsonData['configs'] as List)
           .map((c) => NetworkConfig.fromJson(c))
           .toList();
+      final replacedItemKeys = _ensureUniqueImportedItemKeys(
+        configs,
+        existingItemKeys: existingItemKeys,
+      );
       await saveData(configs);
       
       // Windows平台恢复窗口和系统配置
@@ -412,7 +454,8 @@ class DataPersistence {
         }
         
         if (winSettings.containsKey('default_key')) {
-          await saveDefaultKey(winSettings['default_key']);
+          final defaultKey = winSettings['default_key'];
+          await saveDefaultKey(replacedItemKeys[defaultKey] ?? defaultKey);
         }
         
         if (winSettings.containsKey('close_app')) {
@@ -466,6 +509,10 @@ class DataPersistence {
       final jsonData = jsonDecode(content);
       final config = NetworkConfig.fromJson(jsonData['config']);
       final configs = await loadData();
+      _ensureUniqueImportedItemKeys(
+        [config],
+        existingItemKeys: configs.map((config) => config.itemKey),
+      );
       configs.add(config);
       await saveData(configs);
       debugPrint('单个配置导入成功: ${config.configName}');
