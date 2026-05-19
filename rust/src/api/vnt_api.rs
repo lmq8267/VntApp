@@ -62,8 +62,7 @@ pub fn init_log_with_path(log_dir: String, config_path: String) -> anyhow::Resul
     // 确保日志目录存在
     let log_path = PathBuf::from(&log_dir);
     if !log_path.exists() {
-        std::fs::create_dir_all(&log_path)
-            .context(format!("创建日志目录失败: {}", log_dir))?;
+        std::fs::create_dir_all(&log_path).context(format!("创建日志目录失败: {}", log_dir))?;
     }
 
     // 日志文件路径
@@ -73,7 +72,10 @@ pub fn init_log_with_path(log_dir: String, config_path: String) -> anyhow::Resul
     let trigger = SizeTrigger::new(10 * 1024 * 1024);
 
     // 滚动文件命名模式：vnt-core.1.log, vnt-core.2.log, ..., vnt-core.5.log
-    let roller_pattern = log_path.join("vnt-core.{}.log").to_string_lossy().to_string();
+    let roller_pattern = log_path
+        .join("vnt-core.{}.log")
+        .to_string_lossy()
+        .to_string();
     let roller = FixedWindowRoller::builder()
         .build(&roller_pattern, 5)
         .context("创建日志滚动器失败")?;
@@ -82,7 +84,8 @@ pub fn init_log_with_path(log_dir: String, config_path: String) -> anyhow::Resul
     let policy = CompoundPolicy::new(Box::new(trigger), Box::new(roller));
 
     // 日志编码格式
-    let encoder = PatternEncoder::new("{d(%Y-%m-%d %H:%M:%S%.3f)} [{f}:{L}] {h({l})} {M}:{m}{n}{n}");
+    let encoder =
+        PatternEncoder::new("{d(%Y-%m-%d %H:%M:%S%.3f)} [{f}:{L}] {h({l})} {M}:{m}{n}{n}");
 
     // 滚动文件追加器
     let appender = RollingFileAppender::builder()
@@ -93,7 +96,11 @@ pub fn init_log_with_path(log_dir: String, config_path: String) -> anyhow::Resul
     // 构建日志配置
     let config = Config::builder()
         .appender(Appender::builder().build("rolling_file", Box::new(appender)))
-        .build(Root::builder().appender("rolling_file").build(LevelFilter::Info))
+        .build(
+            Root::builder()
+                .appender("rolling_file")
+                .build(LevelFilter::Info),
+        )
         .context("构建日志配置失败")?;
 
     // 初始化日志系统
@@ -133,9 +140,9 @@ pub struct VntConfig {
     // 端口映射
     pub port_mapping_list: Vec<String>,
     pub compressor: String,
-    pub allow_wire_guard:bool,
-    pub local_dev:Option<String>,
-    pub disable_relay:bool,
+    pub allow_wire_guard: bool,
+    pub local_dev: Option<String>,
+    pub disable_relay: bool,
 }
 
 pub struct VntApi {
@@ -218,10 +225,18 @@ impl VntApi {
     }
     #[flutter_rust_bridge::frb(sync)]
     pub fn device_list(&self) -> Vec<RustPeerClientInfo> {
+        let current_client_secret = self.vnt.client_encrypt();
+        let current_client_secret_hash = self.vnt.client_encrypt_hash().unwrap_or(&[]).to_vec();
         self.vnt
             .device_list()
             .into_iter()
-            .map(|v| v.into())
+            .map(|v| {
+                RustPeerClientInfo::from_peer_device(
+                    v,
+                    current_client_secret,
+                    current_client_secret_hash.clone(),
+                )
+            })
             .collect()
     }
     #[flutter_rust_bridge::frb(sync)]
@@ -232,7 +247,10 @@ impl VntApi {
             .map(|(ip, routes)| {
                 (
                     ip.to_string(),
-                    routes.into_iter().map(|v| v.into()).collect(),
+                    routes
+                        .into_iter()
+                        .map(|v| self.route_to_rust_route(v))
+                        .collect(),
                 )
             })
             .collect()
@@ -248,7 +266,7 @@ impl VntApi {
     #[flutter_rust_bridge::frb(sync)]
     pub fn route(&self, ip: &String) -> Option<RustRoute> {
         match Ipv4Addr::from_str(ip) {
-            Ok(ip) => self.vnt.route(&ip).map(|v| v.into()),
+            Ok(ip) => self.vnt.route(&ip).map(|v| self.route_to_rust_route(v)),
             Err(_) => None,
         }
     }
@@ -325,6 +343,40 @@ impl VntApi {
         };
         let (_, down_map) = self.vnt.down_stream_all().unwrap_or_default();
         convert(down_map.get(&ip).cloned().unwrap_or_default())
+    }
+
+    fn route_to_rust_route(&self, route: Route) -> RustRoute {
+        let next_hop = self
+            .vnt
+            .route_key(&route.route_key())
+            .map(|v| v.to_string())
+            .unwrap_or_default();
+        let nat_traversal_type = if route.metric == 1 {
+            if route.protocol.is_base_tcp() {
+                "tcp-p2p"
+            } else {
+                "p2p"
+            }
+        } else if next_hop.is_empty() {
+            "server-relay"
+        } else if Ipv4Addr::from_str(&next_hop)
+            .map(|ip| self.vnt.is_gateway(&ip))
+            .unwrap_or(false)
+        {
+            "server-relay"
+        } else {
+            "client-relay"
+        }
+        .to_string();
+
+        RustRoute {
+            protocol: format!("{:?}", route.protocol),
+            addr: route.addr.to_string(),
+            metric: route.metric,
+            rt: route.rt,
+            nat_traversal_type,
+            next_hop,
+        }
     }
 }
 
@@ -642,6 +694,10 @@ pub struct RustPeerClientInfo {
     pub name: String,
     pub status: String,
     pub client_secret: bool,
+    pub client_secret_hash: Vec<u8>,
+    pub current_client_secret: bool,
+    pub current_client_secret_hash: Vec<u8>,
+    pub wire_guard: bool,
 }
 
 impl From<PeerClientInfo> for RustPeerClientInfo {
@@ -651,17 +707,35 @@ impl From<PeerClientInfo> for RustPeerClientInfo {
             name: value.name,
             status: format!("{:?}", value.status),
             client_secret: value.client_secret,
+            client_secret_hash: vec![],
+            current_client_secret: false,
+            current_client_secret_hash: vec![],
+            wire_guard: false,
         }
     }
 }
 
 impl From<PeerDeviceInfo> for RustPeerClientInfo {
     fn from(value: PeerDeviceInfo) -> Self {
+        Self::from_peer_device(value, false, vec![])
+    }
+}
+
+impl RustPeerClientInfo {
+    fn from_peer_device(
+        value: PeerDeviceInfo,
+        current_client_secret: bool,
+        current_client_secret_hash: Vec<u8>,
+    ) -> Self {
         Self {
             virtual_ip: value.virtual_ip.to_string(),
             name: value.name,
             status: format!("{:?}", value.status),
             client_secret: value.client_secret,
+            client_secret_hash: value.client_secret_hash,
+            current_client_secret,
+            current_client_secret_hash,
+            wire_guard: value.wireguard,
         }
     }
 }
@@ -715,6 +789,8 @@ pub struct RustRoute {
     pub addr: String,
     pub metric: u8,
     pub rt: i64,
+    pub nat_traversal_type: String,
+    pub next_hop: String,
 }
 
 impl From<Route> for RustRoute {
@@ -724,6 +800,17 @@ impl From<Route> for RustRoute {
             addr: value.addr.to_string(),
             metric: value.metric,
             rt: value.rt,
+            nat_traversal_type: if value.metric == 1 {
+                if value.protocol.is_base_tcp() {
+                    "tcp-p2p"
+                } else {
+                    "p2p"
+                }
+            } else {
+                "relay"
+            }
+            .to_string(),
+            next_hop: String::new(),
         }
     }
 }

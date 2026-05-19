@@ -937,7 +937,8 @@ fn wire__crate__api__vnt_api__init_log_with_path_impl(
             deserializer.end();
             transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                 (move || {
-                    let output_ok = crate::api::vnt_api::init_log_with_path(api_log_dir, api_config_path)?;
+                    let output_ok =
+                        crate::api::vnt_api::init_log_with_path(api_log_dir, api_config_path)?;
                     Ok(output_ok)
                 })(),
             )
@@ -1738,11 +1739,19 @@ impl SseDecode for crate::api::vnt_api::RustPeerClientInfo {
         let mut var_name = <String>::sse_decode(deserializer);
         let mut var_status = <String>::sse_decode(deserializer);
         let mut var_clientSecret = <bool>::sse_decode(deserializer);
+        let mut var_clientSecretHash = <Vec<u8>>::sse_decode(deserializer);
+        let mut var_currentClientSecret = <bool>::sse_decode(deserializer);
+        let mut var_currentClientSecretHash = <Vec<u8>>::sse_decode(deserializer);
+        let mut var_wireGuard = <bool>::sse_decode(deserializer);
         return crate::api::vnt_api::RustPeerClientInfo {
             virtual_ip: var_virtualIp,
             name: var_name,
             status: var_status,
             client_secret: var_clientSecret,
+            client_secret_hash: var_clientSecretHash,
+            current_client_secret: var_currentClientSecret,
+            current_client_secret_hash: var_currentClientSecretHash,
+            wire_guard: var_wireGuard,
         };
     }
 }
@@ -1768,11 +1777,15 @@ impl SseDecode for crate::api::vnt_api::RustRoute {
         let mut var_addr = <String>::sse_decode(deserializer);
         let mut var_metric = <u8>::sse_decode(deserializer);
         let mut var_rt = <i64>::sse_decode(deserializer);
+        let mut var_natTraversalType = <String>::sse_decode(deserializer);
+        let mut var_nextHop = <String>::sse_decode(deserializer);
         return crate::api::vnt_api::RustRoute {
             protocol: var_protocol,
             addr: var_addr,
             metric: var_metric,
             rt: var_rt,
+            nat_traversal_type: var_natTraversalType,
+            next_hop: var_nextHop,
         };
     }
 }
@@ -2153,6 +2166,10 @@ impl flutter_rust_bridge::IntoDart for crate::api::vnt_api::RustPeerClientInfo {
             self.name.into_into_dart().into_dart(),
             self.status.into_into_dart().into_dart(),
             self.client_secret.into_into_dart().into_dart(),
+            self.client_secret_hash.into_into_dart().into_dart(),
+            self.current_client_secret.into_into_dart().into_dart(),
+            self.current_client_secret_hash.into_into_dart().into_dart(),
+            self.wire_guard.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -2198,6 +2215,8 @@ impl flutter_rust_bridge::IntoDart for crate::api::vnt_api::RustRoute {
             self.addr.into_into_dart().into_dart(),
             self.metric.into_into_dart().into_dart(),
             self.rt.into_into_dart().into_dart(),
+            self.nat_traversal_type.into_into_dart().into_dart(),
+            self.next_hop.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -2652,6 +2671,10 @@ impl SseEncode for crate::api::vnt_api::RustPeerClientInfo {
         <String>::sse_encode(self.name, serializer);
         <String>::sse_encode(self.status, serializer);
         <bool>::sse_encode(self.client_secret, serializer);
+        <Vec<u8>>::sse_encode(self.client_secret_hash, serializer);
+        <bool>::sse_encode(self.current_client_secret, serializer);
+        <Vec<u8>>::sse_encode(self.current_client_secret_hash, serializer);
+        <bool>::sse_encode(self.wire_guard, serializer);
     }
 }
 
@@ -2671,6 +2694,8 @@ impl SseEncode for crate::api::vnt_api::RustRoute {
         <String>::sse_encode(self.addr, serializer);
         <u8>::sse_encode(self.metric, serializer);
         <i64>::sse_encode(self.rt, serializer);
+        <String>::sse_encode(self.nat_traversal_type, serializer);
+        <String>::sse_encode(self.next_hop, serializer);
     }
 }
 

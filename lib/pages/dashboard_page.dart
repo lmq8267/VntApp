@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:vnt_app/theme/app_theme.dart';
 import 'package:vnt_app/vnt/vnt_manager.dart';
+import 'package:vnt_app/src/rust/api/vnt_api.dart';
 import 'package:vnt_app/data_persistence.dart';
 import 'package:vnt_app/network_config.dart';
 import 'package:vnt_app/utils/toast_utils.dart';
@@ -127,6 +128,75 @@ class _DashboardPageState extends State<DashboardPage> {
   // 判断设备是否在线 - 不区分大小写，去掉空格和换行
   bool _isDeviceOnline(String status) {
     return status.trim().toLowerCase() == 'online';
+  }
+
+  bool _isGatewayIp(String ip) {
+    if (ip.trim().endsWith('.1')) return true;
+    for (var entry in vntManager.map.entries) {
+      final vntBox = entry.value;
+      if (vntBox.isClosed()) continue;
+      final gateway = vntBox.currentDevice()['virtualGateway'];
+      if (gateway == ip) return true;
+    }
+    return false;
+  }
+
+  bool _sameBytes(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  bool _hasPasswordMismatch(RustPeerClientInfo device) {
+    if (device.wireGuard) return false;
+    if (device.clientSecret != device.currentClientSecret) return true;
+    return device.currentClientSecretHash.isNotEmpty &&
+        device.clientSecretHash.isNotEmpty &&
+        !_sameBytes(device.currentClientSecretHash, device.clientSecretHash);
+  }
+
+  String _formatRouteLabel(String type) {
+    switch (type.toLowerCase()) {
+      case 'p2p':
+        return 'P2P';
+      case 'tcp-p2p':
+        return 'TCP-P2P';
+      case 'client-relay':
+        return '客户端中继';
+      case 'server-relay':
+      case 'relay':
+        return '服务器中继';
+      default:
+        return type.isEmpty ? '未知' : type;
+    }
+  }
+
+  String _deviceConnectionLabel(RustPeerClientInfo device, RustRoute? route) {
+    if (_isGatewayIp(device.virtualIp)) return '服务器';
+    if (_isDeviceOnline(device.status) && _hasPasswordMismatch(device)) return '参数不匹配';
+    if (route == null || route.rt <= 0 || route.rt >= 9999) return '未连通';
+    return _formatRouteLabel(route.natTraversalType);
+  }
+
+  Color _connectionLabelColor(String label) {
+    switch (label) {
+      case 'P2P':
+      case 'TCP-P2P':
+        return AppTheme.successColor;
+      case '客户端中继':
+      case '服务器中继':
+        return AppTheme.warningColor;
+      case '参数不匹配':
+        return AppTheme.errorColor;
+      case '未连通':
+        return const Color(0xFFFF5722);
+      case '服务器':
+        return Colors.blue;
+      default:
+        return Theme.of(context).primaryColor;
+    }
   }
 
   // 加载默认配置（与设置页面逻辑完全一致）
@@ -2877,14 +2947,16 @@ class _DashboardPageState extends State<DashboardPage> {
         final devices = vntBox.peerDeviceList();
         for (var device in devices) {
           if (_isDeviceOnline(device.status)) {
-            totalOnlineDevices++;
             final route = vntBox.route(device.virtualIp);
-            if (route != null) {
-              if (route.metric == 1) {
-                p2pCount++;
-              } else {
-                relayCount++;
-              }
+            final label = _deviceConnectionLabel(device, route);
+            if (label == '服务器' || label == '参数不匹配' || label.isEmpty) {
+              continue;
+            }
+            totalOnlineDevices++;
+            if (label == 'P2P' || label == 'TCP-P2P') {
+              p2pCount++;
+            } else if (label == '客户端中继' || label == '服务器中继') {
+              relayCount++;
             }
           }
         }
@@ -4142,8 +4214,8 @@ class _DashboardPageState extends State<DashboardPage> {
           String p2pRelay = '';
           String rt = '';
           int rtValue = 0;
+          p2pRelay = _deviceConnectionLabel(device, route);
           if (route != null) {
-            p2pRelay = route.metric == 1 ? 'P2P' : 'Relay';
             rtValue = route.rt;
             rt = route.rt > 0 && route.rt < 9999 ? '${route.rt}ms' : '--';
           }
@@ -4489,9 +4561,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                               Container(
                                                 padding: EdgeInsets.symmetric(horizontal: context.spacingXSmall, vertical: context.spacingXSmall / 4),
                                                 decoration: BoxDecoration(
-                                                  color: device['p2pRelay'] == 'P2P'
-                                                      ? Colors.blue[400]!.withOpacity(0.2)
-                                                      : Colors.orange[400]!.withOpacity(0.2),
+                                                  color: _connectionLabelColor(device['p2pRelay']).withOpacity(0.2),
                                                   borderRadius: BorderRadius.circular(6),
                                                 ),
                                                 child: Text(
@@ -4499,9 +4569,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                                   style: TextStyle(
                                                     fontSize: context.fontXSmall,
                                                     fontWeight: FontWeight.bold,
-                                                    color: device['p2pRelay'] == 'P2P'
-                                                        ? Colors.blue[400]
-                                                        : Colors.orange[400],
+                                                    color: _connectionLabelColor(device['p2pRelay']),
                                                   ),
                                                 ),
                                               ),

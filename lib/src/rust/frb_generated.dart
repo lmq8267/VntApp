@@ -1461,13 +1461,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   RustPeerClientInfo dco_decode_rust_peer_client_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    if (arr.length != 8)
+      throw Exception('unexpected arr length: expect 8 but see ${arr.length}');
     return RustPeerClientInfo(
       virtualIp: dco_decode_String(arr[0]),
       name: dco_decode_String(arr[1]),
       status: dco_decode_String(arr[2]),
       clientSecret: dco_decode_bool(arr[3]),
+      clientSecretHash: dco_decode_list_prim_u_8_strict(arr[4]),
+      currentClientSecret: dco_decode_bool(arr[5]),
+      currentClientSecretHash: dco_decode_list_prim_u_8_strict(arr[6]),
+      wireGuard: dco_decode_bool(arr[7]),
     );
   }
 
@@ -1488,13 +1492,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   RustRoute dco_decode_rust_route(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
     return RustRoute(
       protocol: dco_decode_String(arr[0]),
       addr: dco_decode_String(arr[1]),
       metric: dco_decode_u_8(arr[2]),
       rt: dco_decode_i_64(arr[3]),
+      natTraversalType: dco_decode_String(arr[4]),
+      nextHop: dco_decode_String(arr[5]),
     );
   }
 
@@ -2030,11 +2036,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_name = sse_decode_String(deserializer);
     var var_status = sse_decode_String(deserializer);
     var var_clientSecret = sse_decode_bool(deserializer);
+    var var_clientSecretHash = sse_decode_list_prim_u_8_strict(deserializer);
+    var var_currentClientSecret = sse_decode_bool(deserializer);
+    var var_currentClientSecretHash =
+        sse_decode_list_prim_u_8_strict(deserializer);
+    var var_wireGuard = sse_decode_bool(deserializer);
     return RustPeerClientInfo(
         virtualIp: var_virtualIp,
         name: var_name,
         status: var_status,
-        clientSecret: var_clientSecret);
+        clientSecret: var_clientSecret,
+        clientSecretHash: var_clientSecretHash,
+        currentClientSecret: var_currentClientSecret,
+        currentClientSecretHash: var_currentClientSecretHash,
+        wireGuard: var_wireGuard);
   }
 
   @protected
@@ -2056,8 +2071,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_addr = sse_decode_String(deserializer);
     var var_metric = sse_decode_u_8(deserializer);
     var var_rt = sse_decode_i_64(deserializer);
+    var var_natTraversalType = sse_decode_String(deserializer);
+    var var_nextHop = sse_decode_String(deserializer);
     return RustRoute(
-        protocol: var_protocol, addr: var_addr, metric: var_metric, rt: var_rt);
+        protocol: var_protocol,
+        addr: var_addr,
+        metric: var_metric,
+        rt: var_rt,
+        natTraversalType: var_natTraversalType,
+        nextHop: var_nextHop);
   }
 
   @protected
@@ -2651,6 +2673,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.name, serializer);
     sse_encode_String(self.status, serializer);
     sse_encode_bool(self.clientSecret, serializer);
+    sse_encode_list_prim_u_8_strict(self.clientSecretHash, serializer);
+    sse_encode_bool(self.currentClientSecret, serializer);
+    sse_encode_list_prim_u_8_strict(self.currentClientSecretHash, serializer);
+    sse_encode_bool(self.wireGuard, serializer);
   }
 
   @protected
@@ -2669,6 +2695,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.addr, serializer);
     sse_encode_u_8(self.metric, serializer);
     sse_encode_i_64(self.rt, serializer);
+    sse_encode_String(self.natTraversalType, serializer);
+    sse_encode_String(self.nextHop, serializer);
   }
 
   @protected

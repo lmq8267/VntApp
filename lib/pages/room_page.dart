@@ -512,6 +512,81 @@ class _RoomPageState extends State<RoomPage> with SingleTickerProviderStateMixin
     }
   }
 
+  bool _isGatewayIp(String ip) {
+    if (ip.trim().endsWith('.1')) return true;
+    for (var entry in vntManager.map.entries) {
+      final vntBox = entry.value;
+      if (vntBox.isClosed()) continue;
+      final gateway = vntBox.currentDevice()['virtualGateway'];
+      if (gateway == ip) return true;
+    }
+    return false;
+  }
+
+  bool _hasPasswordMismatch(RustPeerClientInfo device) {
+    if (device.wireGuard) return false;
+    if (device.clientSecret != device.currentClientSecret) return true;
+    return device.currentClientSecretHash.isNotEmpty &&
+        device.clientSecretHash.isNotEmpty &&
+        !_listEquals(device.currentClientSecretHash, device.clientSecretHash);
+  }
+
+  bool _listEquals(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  String _formatRouteLabel(String type) {
+    switch (type.toLowerCase()) {
+      case 'p2p':
+        return 'P2P';
+      case 'tcp-p2p':
+        return 'TCP-P2P';
+      case 'client-relay':
+        return '客户端中继';
+      case 'server-relay':
+      case 'relay':
+        return '服务器中继';
+      default:
+        return type.isEmpty ? '未知' : type;
+    }
+  }
+
+  String _deviceConnectionLabel(RustPeerClientInfo device, RustRoute? route) {
+    if (_isGatewayIp(device.virtualIp)) return '服务器';
+    if (_isDeviceOnline(device.status) && _hasPasswordMismatch(device)) return '参数不匹配';
+    if (route == null || route.rt <= 0 || route.rt >= 9999) return '未连通';
+    return _formatRouteLabel(route.natTraversalType);
+  }
+
+  String _routeConnectionLabel(String destination, RustRoute route) {
+    if (_isGatewayIp(destination)) return '服务器';
+    if (route.rt <= 0 || route.rt >= 9999) return '未连通';
+    return _formatRouteLabel(route.natTraversalType);
+  }
+
+  Color _connectionLabelColor(String label) {
+    switch (label) {
+      case 'P2P':
+      case 'TCP-P2P':
+        return Colors.green;
+      case '客户端中继':
+      case '服务器中继':
+        return Colors.orange;
+      case '参数不匹配':
+        return Colors.red;
+      case '未连通':
+        return const Color(0xFFFF5722);
+      case '服务器':
+        return Colors.blue;
+      default:
+        return Theme.of(context).primaryColor;
+    }
+  }
+
   // IP地址比较函数 - 用于排序
   int _compareIpAddresses(String ip1, String ip2) {
     try {
@@ -548,8 +623,8 @@ class _RoomPageState extends State<RoomPage> with SingleTickerProviderStateMixin
       final vntBox = entry.value;
       if (!vntBox.isClosed()) {
         final route = vntBox.route(device.virtualIp);
+        p2pRelay = _deviceConnectionLabel(device, route);
         if (route != null) {
-          p2pRelay = route.metric == 1 ? 'P2P' : '中继';
           rt = route.rt;
         }
 
@@ -659,9 +734,7 @@ class _RoomPageState extends State<RoomPage> with SingleTickerProviderStateMixin
                           vertical: context.spacingXSmall / 2,
                         ),
                         decoration: BoxDecoration(
-                          color: p2pRelay == 'P2P'
-                              ? Colors.green.withOpacity(0.15)
-                              : Colors.orange.withOpacity(0.15),
+                          color: _connectionLabelColor(p2pRelay).withOpacity(0.15),
                           borderRadius: BorderRadius.circular(context.spacingXSmall),
                         ),
                         child: Text(
@@ -669,9 +742,7 @@ class _RoomPageState extends State<RoomPage> with SingleTickerProviderStateMixin
                           style: TextStyle(
                             fontSize: context.fontSmall,
                             fontWeight: FontWeight.w600,
-                            color: p2pRelay == 'P2P'
-                                ? Colors.green
-                                : Colors.orange,
+                            color: _connectionLabelColor(p2pRelay),
                           ),
                         ),
                       ),
@@ -824,8 +895,9 @@ class _RoomPageState extends State<RoomPage> with SingleTickerProviderStateMixin
 
   // 路由卡片
   Widget _buildRouteCard(String destination, RustRoute route, bool isDark) {
-    final isP2P = route.metric == 1;
     final primaryColor = Theme.of(context).primaryColor;
+    final routeLabel = _routeConnectionLabel(destination, route);
+    final routeColor = _connectionLabelColor(routeLabel);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -865,17 +937,15 @@ class _RoomPageState extends State<RoomPage> with SingleTickerProviderStateMixin
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isP2P
-                      ? Colors.green.withOpacity(0.15)
-                      : Colors.orange.withOpacity(0.15),
+                  color: routeColor.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  isP2P ? 'P2P' : '中继',
+                  routeLabel,
                   style: TextStyle(
                     fontSize: context.fontXSmall,
                     fontWeight: FontWeight.w600,
-                    color: isP2P ? Colors.green : Colors.orange,
+                    color: routeColor,
                   ),
                 ),
               ),
@@ -1022,17 +1092,8 @@ class _RoomPageState extends State<RoomPage> with SingleTickerProviderStateMixin
       if (entry.value.isClosed()) continue;
       final route = entry.value.route(device.virtualIp);
       if (route != null) {
-        final protocol = route.protocol.toLowerCase();
-        if (protocol.contains('p2p') || protocol.contains('udp') || protocol.contains('tcp')) {
-          label = 'P2P';
-          color = AppTheme.successColor;
-        } else if (protocol.contains('relay') || protocol.contains('server')) {
-          label = '中继';
-          color = AppTheme.warningColor;
-        } else {
-          label = route.protocol;
-          color = primaryColor;
-        }
+        label = _deviceConnectionLabel(device, route);
+        color = _connectionLabelColor(label);
         break;
       }
     }
@@ -1461,14 +1522,13 @@ class _RoomPageState extends State<RoomPage> with SingleTickerProviderStateMixin
                           )
                         else
                           ...routeList.map((route) {
-                            final isP2P = route.metric == 1;
+                            final routeLabel = _routeConnectionLabel(device.virtualIp, route);
+                            final routeColor = _connectionLabelColor(routeLabel);
                             return Container(
                               margin: EdgeInsets.only(bottom: isLandscape ? 5 : (isMobile ? 6 : 8)),
                               padding: EdgeInsets.all(isLandscape ? 8 : (isMobile ? 10 : 12)),
                               decoration: BoxDecoration(
-                                color: isP2P
-                                    ? Colors.green.withOpacity(0.1)
-                                    : Colors.orange.withOpacity(0.1),
+                                color: routeColor.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(isLandscape ? 8 : 12),
                               ),
                               child: Column(
@@ -1483,17 +1543,15 @@ class _RoomPageState extends State<RoomPage> with SingleTickerProviderStateMixin
                                           vertical: isLandscape ? 2 : (isMobile ? 3 : 4),
                                         ),
                                         decoration: BoxDecoration(
-                                          color: isP2P
-                                              ? Colors.green.withOpacity(0.2)
-                                              : Colors.orange.withOpacity(0.2),
+                                          color: routeColor.withOpacity(0.2),
                                           borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: Text(
-                                          isP2P ? 'P2P' : 'Relay',
+                                          routeLabel,
                                           style: TextStyle(
                                             fontSize: isLandscape ? 8 : (isMobile ? 9 : 11),
                                             fontWeight: FontWeight.w600,
-                                            color: isP2P ? Colors.green : Colors.orange,
+                                            color: routeColor,
                                           ),
                                         ),
                                       ),
@@ -2094,4 +2152,3 @@ class _LatencyChartPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
-

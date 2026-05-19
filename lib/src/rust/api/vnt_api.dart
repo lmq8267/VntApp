@@ -3,6 +3,8 @@
 
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
+import 'dart:typed_data';
+
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
@@ -296,12 +298,20 @@ class RustPeerClientInfo {
   final String name;
   final String status;
   final bool clientSecret;
+  final Uint8List clientSecretHash;
+  final bool currentClientSecret;
+  final Uint8List currentClientSecretHash;
+  final bool wireGuard;
 
   const RustPeerClientInfo({
     required this.virtualIp,
     required this.name,
     required this.status,
     required this.clientSecret,
+    required this.clientSecretHash,
+    required this.currentClientSecret,
+    required this.currentClientSecretHash,
+    required this.wireGuard,
   });
 
   @override
@@ -309,7 +319,11 @@ class RustPeerClientInfo {
       virtualIp.hashCode ^
       name.hashCode ^
       status.hashCode ^
-      clientSecret.hashCode;
+      clientSecret.hashCode ^
+      clientSecretHash.hashCode ^
+      currentClientSecret.hashCode ^
+      currentClientSecretHash.hashCode ^
+      wireGuard.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -319,7 +333,11 @@ class RustPeerClientInfo {
           virtualIp == other.virtualIp &&
           name == other.name &&
           status == other.status &&
-          clientSecret == other.clientSecret;
+          clientSecret == other.clientSecret &&
+          clientSecretHash == other.clientSecretHash &&
+          currentClientSecret == other.currentClientSecret &&
+          currentClientSecretHash == other.currentClientSecretHash &&
+          wireGuard == other.wireGuard;
 }
 
 class RustRegisterInfo {
@@ -352,17 +370,26 @@ class RustRoute {
   final String addr;
   final int metric;
   final PlatformInt64 rt;
+  final String natTraversalType;
+  final String nextHop;
 
   const RustRoute({
     required this.protocol,
     required this.addr,
     required this.metric,
     required this.rt,
+    required this.natTraversalType,
+    required this.nextHop,
   });
 
   @override
   int get hashCode =>
-      protocol.hashCode ^ addr.hashCode ^ metric.hashCode ^ rt.hashCode;
+      protocol.hashCode ^
+      addr.hashCode ^
+      metric.hashCode ^
+      rt.hashCode ^
+      natTraversalType.hashCode ^
+      nextHop.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -372,7 +399,9 @@ class RustRoute {
           protocol == other.protocol &&
           addr == other.addr &&
           metric == other.metric &&
-          rt == other.rt;
+          rt == other.rt &&
+          natTraversalType == other.natTraversalType &&
+          nextHop == other.nextHop;
 }
 
 class VntConfig {
