@@ -31,6 +31,17 @@ class SystemTrayManager {
     return _systemTray!;
   }
 
+  Future<void> showMainWindow() async {
+    if (!Platform.isWindows && !Platform.isMacOS && !Platform.isLinux) {
+      return;
+    }
+    if (Platform.isWindows || Platform.isLinux) {
+      await windowManager.setSkipTaskbar(false);
+    }
+    await windowManager.show();
+    await windowManager.focus();
+  }
+
   /// 更新系统托盘菜单
   /// [optimisticState] 乐观更新的连接状态，如果为null则使用实际状态
   Future<void> updateMenu({bool? optimisticState}) async {
@@ -112,8 +123,8 @@ class SystemTrayManager {
     // 显示主界面
     menuItems.add(MenuItemLabel(
       label: '显示主界面',
-      onClicked: (menuItem) {
-        windowManager.show();
+      onClicked: (menuItem) async {
+        await showMainWindow();
       },
     ));
 

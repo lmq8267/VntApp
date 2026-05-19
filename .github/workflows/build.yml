@@ -260,6 +260,13 @@ jobs:
            cargo build --target armv7-linux-androideabi --release
            mv -f target/armv7-linux-androideabi/release/*.so ../android/app/src/main/jniLibs/armeabi-v7a/librust_lib_vnt_app.so
 
+      - name: 上传 jniLibs
+        if: matrix.NAME == 'vntApp-android' && github.event.inputs.rebuild_android_so == 'true'
+        uses: actions/upload-artifact@main
+        with:
+          name: android-jniLibs
+          path: android/app/src/main/jniLibs/
+          
       - name: 构建 Android vntAPP
         if: matrix.NAME == 'vntApp-android'
         run: |

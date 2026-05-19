@@ -22,6 +22,17 @@ import 'package:vnt_app/config_manager.dart';
 final SystemTray systemTray = SystemTray();
 final AppWindow appWindow = AppWindow();
 
+bool _startHidden = false;
+
+bool _shouldStartHidden(List<String> args) {
+  return Platform.isWindows &&
+      args.any((arg) =>
+          arg == '--startup-hidden' ||
+          arg == '--startup-tray' ||
+          arg == '--hidden' ||
+          arg == '--minimized');
+}
+
 /// 检测是否是 Windows 10 或更高版本
 bool isWindows10OrGreater() {
   if (!Platform.isWindows) return false;
@@ -43,7 +54,9 @@ bool isWindows10OrGreater() {
   return true;
 }
 
-Future<void> main() async {
+Future<void> main(List<String> args) async {
+  _startHidden = _shouldStartHidden(args);
+
   // macOS 启动时先检查权限，在Flutter初始化之前
   // 避免显示窗口后再提示输入密码
   if (Platform.isMacOS) {
@@ -155,7 +168,12 @@ Future<void> main() async {
       }
 
       windowManager.waitUntilReadyToShow().then((_) async {
-        await appWindow.show();
+        if (Platform.isWindows && _startHidden) {
+          await windowManager.setSkipTaskbar(true);
+          await windowManager.hide();
+        } else {
+          await appWindow.show();
+        }
       });
     }
   }
@@ -628,9 +646,13 @@ Future<void> initSystemTray() async {
   // 注册事件处理器
   systemTray.registerSystemTrayEventHandler((eventName) {
     if (eventName == kSystemTrayEventClick) {
-      Platform.isWindows ? windowManager.show() : systemTray.popUpContextMenu();
+      Platform.isWindows
+          ? SystemTrayManager().showMainWindow()
+          : systemTray.popUpContextMenu();
     } else if (eventName == kSystemTrayEventRightClick) {
-      Platform.isWindows ? systemTray.popUpContextMenu() : windowManager.show();
+      Platform.isWindows
+          ? systemTray.popUpContextMenu()
+          : SystemTrayManager().showMainWindow();
     }
   });
 }
