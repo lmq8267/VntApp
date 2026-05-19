@@ -4,8 +4,9 @@
 
 #include "flutter/generated_plugin_registrant.h"
 
-FlutterWindow::FlutterWindow(const flutter::DartProject& project)
-    : project_(project) {}
+FlutterWindow::FlutterWindow(const flutter::DartProject& project,
+                             bool show_on_first_frame)
+    : project_(project), show_on_first_frame_(show_on_first_frame) {}
 
 FlutterWindow::~FlutterWindow() {}
 
@@ -27,9 +28,11 @@ bool FlutterWindow::OnCreate() {
   RegisterPlugins(flutter_controller_->engine());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
-  flutter_controller_->engine()->SetNextFrameCallback([&]() {
-    this->Show();
-  });
+  if (show_on_first_frame_) {
+    flutter_controller_->engine()->SetNextFrameCallback([&]() {
+      this->Show();
+    });
+  }
 
   // Flutter can complete the first frame before the "show window" callback is
   // registered. The following call ensures a frame is pending to ensure the
