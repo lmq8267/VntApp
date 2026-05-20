@@ -313,7 +313,7 @@
       50% { transform:translateX(4px); opacity:1; }
     }
 
-    /* DEMO WINDOW — 保持原版结构和标题 */
+    /* DEMO WINDOW  */
     .win-frame {
       border-radius: 10px;
       box-shadow:
@@ -473,6 +473,7 @@
     @media(max-width:760px){ .features-grid { grid-template-columns:repeat(2,1fr); } }
     @media(max-width:500px){ .features-grid { grid-template-columns:1fr; } }
 
+    @media (max-width: 768px) { .win-screen { padding-top: 125%; } }
     .feature {
       background: rgba(255,255,255,0.72);
       border: 1px solid var(--border);
@@ -769,7 +770,7 @@
 <script>
   // 打字机动态提示
   const messages = [
-    '👆 点击下方APP窗口，可以直接体验！',
+    '👇 点击下方APP窗口，可以直接体验！',
     '🖱️ 基于真实的 Flutter Web 演示',
     '📱 模拟完整的 VNT APP 操作界面',
     '✨ 无需安装，即刻体验部分功能',
