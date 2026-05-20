@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:vnt_app/utils/platform_utils.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -462,9 +463,9 @@ class _LogPageState extends State<LogPage> {
         borderRadius: BorderRadius.circular(context.cardRadius),
       ),
       child: SelectionArea(
-        selectionControls: Platform.isWindows || Platform.isLinux
+        selectionControls: PlatformUtils.isWindows || PlatformUtils.isLinux
             ? DesktopTextSelectionControls()
-            : (Platform.isMacOS
+            : (PlatformUtils.isMacOS
                 ? CupertinoDesktopTextSelectionControls()
                 : materialTextSelectionControls),
         contextMenuBuilder: (context, selectableRegionState) {
@@ -481,7 +482,7 @@ class _LogPageState extends State<LogPage> {
                   }
                 },
               ),
-              if (Platform.isWindows || Platform.isMacOS || Platform.isLinux)
+              if (PlatformUtils.isWindows || PlatformUtils.isMacOS || PlatformUtils.isLinux)
                 ContextMenuButtonItem(
                   label: '复制全部',
                   onPressed: () {
@@ -562,7 +563,7 @@ class _LogPageState extends State<LogPage> {
 
         // 移动端：使用SelectableText支持选择
         // 桌面端：使用Text + 右键菜单
-        if (Platform.isAndroid || Platform.isIOS) {
+        if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 2.0),
             child: Text(
@@ -632,7 +633,7 @@ class _LogPageState extends State<LogPage> {
       debugPrint('准备复制到剪贴板，总长度: ${allLogs.length} 字符');
 
       // macOS 平台特殊处理：使用 pbcopy 命令
-      if (Platform.isMacOS) {
+      if (PlatformUtils.isMacOS) {
         try {
           // 先尝试使用 Flutter 的剪贴板 API
           await Clipboard.setData(ClipboardData(text: allLogs));
@@ -724,7 +725,7 @@ class _LogPageState extends State<LogPage> {
       } catch (clipboardError) {
         debugPrint('剪贴板操作失败: $clipboardError');
 
-        if (Platform.isAndroid && allLogs.length > 100000) {
+        if (PlatformUtils.isAndroid && allLogs.length > 100000) {
           // 如果是 Android 且文本较大，提示用户使用下载功能
           if (mounted) {
             showTopToast(context, '日志内容过大，建议下载日志', isSuccess: false);
@@ -745,7 +746,7 @@ class _LogPageState extends State<LogPage> {
   // 下载所有日志文件
   Future<void> _downloadLogs() async {
     try {
-      if (Platform.isAndroid) {
+      if (PlatformUtils.isAndroid) {
         // Android 平台下载日志
         final directory = await getTemporaryDirectory();
         final fileName = 'vnt_logs_${DateTime.now().millisecondsSinceEpoch}.txt';
@@ -783,7 +784,7 @@ class _LogPageState extends State<LogPage> {
             showTopToast(context, '保存已取消', isSuccess: false);
           }
         }
-      } else if (Platform.isIOS) {
+      } else if (PlatformUtils.isIOS) {
         // iOS使用Share Sheet分享日志
         final tempDir = await getTemporaryDirectory();
         final fileName = 'vnt_log_${DateTime.now().millisecondsSinceEpoch}.txt';

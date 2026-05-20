@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VNT APP - 跨平台虚拟网络工具</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand: #00BFA5;
+      --brand-light: #00E5C8;
+      --brand-dark: #008E76;
+      --brand-soft: rgba(0, 191, 165, 0.10);
+      --brand-border: rgba(0, 191, 165, 0.22);
+      --text: #111827;
+      --text-2: #4B5563;
+      --text-3: #9CA3AF;
+      --bg: #ffffff;
+      --bg-soft: #F8FAFB;
+      --bg-teal: #F0FAF8;
+      --border: #E5E7EB;
+      --glass-nav: rgba(255,255,255,0.78);
+      --glass-card: rgba(255,255,255,0.70);
+      --glass-card-border: rgba(0,191,165,0.13);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04);
+      --shadow-lg: 0 12px 40px rgba(0,0,0,0.09), 0 2px 8px rgba(0,0,0,0.05);
+      --radius: 12px;
+      --radius-lg: 18px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* MESH BG */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -30%;
+      left: -10%;
+      width: 70vw;
+      height: 70vw;
+      background: radial-gradient(ellipse, rgba(0,191,165,0.08) 0%, transparent 65%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -20%;
+      right: -10%;
+      width: 55vw;
+      height: 55vw;
+      background: radial-gradient(ellipse, rgba(0,150,220,0.05) 0%, transparent 65%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--glass-nav);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid rgba(0,191,165,0.12);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+    }
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 28px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-family: 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei UI', system-ui, -apple-system, sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+    .nav-logo img { width: 28px; height: 28px; border-radius: 6px; }
+    .nav-spacer { flex: 1; }
+    .nav-link {
+      font-size: 0.875rem;
+      color: var(--text-2);
+      text-decoration: none;
+      padding: 6px 13px;
+      border-radius: 8px;
+      transition: color 0.2s, background 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+    }
+    .nav-link:hover { color: var(--text); background: rgba(0,191,165,0.07); }
+    .nav-btn {
+      font-family: 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei UI', system-ui, -apple-system, sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #fff;
+      background: var(--brand);
+      text-decoration: none;
+      padding: 8px 18px;
+      border-radius: 20px;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--brand-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(0,191,165,0.32);
+    }
+
+    /* HERO */
+    .hero {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 100px 28px 56px;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--brand-dark);
+      background: var(--brand-soft);
+      border: 1px solid var(--brand-border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      margin-bottom: 26px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      animation: fadeInDown 0.55s ease both;
+    }
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--brand);
+      animation: pulse-dot 2s ease infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity:1; transform:scale(1); }
+      50% { opacity:0.4; transform:scale(0.65); }
+    }
+    .hero h1 {
+      font-family: 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei UI', system-ui, -apple-system, sans-serif;
+      font-size: clamp(2.2rem, 5vw, 3.6rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.12;
+      margin-bottom: 20px;
+      color: var(--text);
+      animation: fadeInUp 0.65s 0.08s ease both;
+    }
+    .hero h1 .accent {
+      background: linear-gradient(100deg, var(--brand) 0%, #007AFF 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 1.08rem;
+      color: var(--text-2);
+      max-width: 520px;
+      margin: 0 auto 38px;
+      line-height: 1.7;
+      animation: fadeInUp 0.65s 0.16s ease both;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 64px;
+      animation: fadeInUp 0.65s 0.24s ease both;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei UI', system-ui, -apple-system, sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      background: var(--brand);
+      text-decoration: none;
+      padding: 12px 26px;
+      border-radius: 10px;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+    .btn-primary:hover {
+      background: var(--brand-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,191,165,0.32);
+    }
+    .btn-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei UI', system-ui, -apple-system, sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-2);
+      background: rgba(255,255,255,0.7);
+      border: 1px solid var(--border);
+      text-decoration: none;
+      padding: 12px 26px;
+      border-radius: 10px;
+      transition: border-color 0.2s, color 0.2s, transform 0.15s, background 0.2s;
+      backdrop-filter: blur(8px);
+    }
+    .btn-outline:hover {
+      border-color: var(--brand);
+      color: var(--brand-dark);
+      background: var(--brand-soft);
+      transform: translateY(-2px);
+    }
+
+    /* DEMO WRAP */
+    .demo-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 28px 96px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ANIMATED HINT */
+    .demo-hint {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+      animation: fadeInUp 0.65s 0.38s ease both;
+    }
+    .hint-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 18px;
+      background: rgba(255,255,255,0.82);
+      border: 1px solid var(--brand-border);
+      border-radius: 40px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 2px 12px rgba(0,191,165,0.10), var(--shadow-sm);
+    }
+    .hint-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--brand-soft);
+      border: 1px solid var(--brand-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: bounce-icon 2.4s ease infinite;
+      flex-shrink: 0;
+    }
+    .hint-icon svg { width: 13px; height: 13px; }
+    @keyframes bounce-icon {
+      0%,100% { transform:translateY(0) scale(1); }
+      35% { transform:translateY(-4px) scale(1.06); }
+      65% { transform:translateY(2px) scale(0.96); }
+    }
+    .hint-text {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--brand-dark);
+      letter-spacing: 0.005em;
+      min-width: 4px;
+    }
+    .hint-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 13px;
+      background: var(--brand);
+      border-radius: 1px;
+      animation: blink 1s step-end infinite;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .hint-arrow {
+      color: var(--brand);
+      display: flex;
+      align-items: center;
+      animation: arrow-nudge 1.8s ease infinite;
+      flex-shrink: 0;
+    }
+    @keyframes arrow-nudge {
+      0%,100% { transform:translateX(0); opacity:0.6; }
+      50% { transform:translateX(4px); opacity:1; }
+    }
+
+    /* DEMO WINDOW — 保持原版结构和标题 */
+    .win-frame {
+      border-radius: 10px;
+      box-shadow:
+        0 0 0 1px var(--border),
+        0 2px 4px rgba(0,0,0,0.04),
+        0 12px 48px rgba(0,0,0,0.10);
+      overflow: hidden;
+      animation: fadeInUp 0.7s 0.32s ease both;
+      position: relative;
+    }
+    /* 顶部 teal 高光线 */
+    .win-frame::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent 5%, var(--brand) 40%, var(--brand-light) 60%, transparent 95%);
+      z-index: 2;
+      opacity: 0.7;
+      pointer-events: none;
+    }
+    .win-bar {
+      height: 36px;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .win-bar img { width: 16px; height: 16px; margin-right: 7px; border-radius: 3px; }
+    .win-bar-title { flex: 1; font-size: 12px; color: #444; font-family: 'Segoe UI', sans-serif; }
+    .win-controls { display: flex; }
+    .wc {
+      width: 46px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: default;
+      transition: background 0.1s;
+    }
+    .wc:hover { background: rgba(0,0,0,0.07); }
+    .wc.close:hover { background: #c42b1c; color: #fff; }
+    .wc svg { width: 10px; height: 10px; stroke: currentColor; stroke-width: 1.2; fill: none; }
+    .win-screen {
+      position: relative;
+      width: 100%;
+      padding-top: 62%;
+      background: #1e1e2e;
+    }
+    .win-screen iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .win-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+    }
+    .spin {
+      width: 32px;
+      height: 32px;
+      border: 2.5px solid rgba(0,191,165,0.18);
+      border-top-color: var(--brand);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* STATS */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 14px;
+      margin-bottom: 72px;
+    }
+    @media(max-width:600px){ .stats-row { grid-template-columns:repeat(2,1fr); } }
+    .stat-card {
+      background: rgba(255,255,255,0.72);
+      border: 1px solid rgba(0,191,165,0.14);
+      border-radius: var(--radius);
+      padding: 20px 16px;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: var(--shadow-sm);
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .stat-card:hover {
+      border-color: var(--brand-border);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .stat-num {
+      font-family: 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei UI', system-ui, -apple-system, sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--brand-dark);
+      line-height: 1.1;
+    }
+    .stat-label { font-size: 0.78rem; color: var(--text-2); margin-top: 5px; font-weight: 500; }
+
+    /* SECTION */
+    .section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 80px 28px;
+      position: relative;
+      z-index: 1;
+    }
+    .section-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--brand-dark);
+      margin-bottom: 12px;
+    }
+    .section-eyebrow::before {
+      content:'';
+      display:block;
+      width:18px;
+      height:2px;
+      background: var(--brand);
+      border-radius:1px;
+    }
+    .section-title {
+      font-family: 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei UI', system-ui, -apple-system, sans-serif;
+      font-size: clamp(1.6rem,3vw,2.2rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 44px;
+      line-height: 1.2;
+      color: var(--text);
+    }
+    .section-title span { color: var(--text-2); font-weight: 400; }
+
+    /* FEATURES GRID */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 14px;
+    }
+    @media(max-width:760px){ .features-grid { grid-template-columns:repeat(2,1fr); } }
+    @media(max-width:500px){ .features-grid { grid-template-columns:1fr; } }
+
+    .feature {
+      background: rgba(255,255,255,0.72);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 26px 24px;
+      transition: background 0.22s, border-color 0.22s, transform 0.2s, box-shadow 0.2s;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      cursor: default;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature::after {
+      content:'';
+      position:absolute;
+      top:0; left:0; right:0;
+      height:1px;
+      background: linear-gradient(90deg, transparent, rgba(0,191,165,0.25), transparent);
+      opacity:0;
+      transition: opacity 0.3s;
+    }
+    .feature:hover {
+      background: rgba(255,255,255,0.92);
+      border-color: rgba(0,191,165,0.22);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+    .feature:hover::after { opacity:1; }
+    .feature-icon-wrap {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: var(--brand-soft);
+      border: 1px solid var(--brand-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      margin-bottom: 14px;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .feature:hover .feature-icon-wrap {
+      background: rgba(0,191,165,0.16);
+      transform: scale(1.06);
+    }
+    .feature h3 {
+      font-family: 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei UI', system-ui, -apple-system, sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 7px;
+      letter-spacing: -0.01em;
+    }
+    .feature p { font-size: 0.875rem; color: var(--text-2); line-height: 1.65; }
+
+    /* DOWNLOAD */
+    .download-section {
+      background: rgba(248,250,251,0.85);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+    }
+    .download-section::before {
+      content:'';
+      position:absolute;
+      top:-60%;
+      left:50%;
+      transform:translateX(-50%);
+      width:700px;
+      height:400px;
+      background: radial-gradient(ellipse, rgba(0,191,165,0.07) 0%, transparent 70%);
+      pointer-events:none;
+    }
+    .platforms { display:flex; flex-wrap:wrap; gap:10px; }
+    .platform {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 12px 20px;
+      background: rgba(255,255,255,0.80);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      text-decoration: none;
+      color: var(--text-2);
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: border-color 0.2s, color 0.2s, background 0.2s, transform 0.15s, box-shadow 0.2s;
+      backdrop-filter: blur(8px);
+    }
+    .platform:hover {
+      border-color: var(--brand);
+      color: var(--brand-dark);
+      background: var(--brand-soft);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+    .platform span:first-child { font-size: 1.35rem; }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 28px;
+      text-align: center;
+      font-size: 0.83rem;
+      color: var(--text-3);
+      position: relative;
+      z-index: 1;
+    }
+    footer a { color: var(--text-2); text-decoration: none; transition: color 0.2s; }
+    footer a:hover { color: var(--brand-dark); }
+    .footer-sep { color: var(--text-3); }
+
+    /* ANIMATIONS */
+    @keyframes fadeInDown {
+      from { opacity:0; transform:translateY(-14px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes fadeInUp {
+      from { opacity:0; transform:translateY(18px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .reveal { opacity:0; transform:translateY(22px); transition:opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.visible { opacity:1; transform:translateY(0); }
+    .reveal-delay-1 { transition-delay:0.07s; }
+    .reveal-delay-2 { transition-delay:0.14s; }
+    .reveal-delay-3 { transition-delay:0.21s; }
+    .reveal-delay-4 { transition-delay:0.28s; }
+    .reveal-delay-5 { transition-delay:0.35s; }
+    .reveal-delay-6 { transition-delay:0.42s; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="#">
+      <img src="./app/icons/Icon-192.png" alt="VNT APP" onerror="this.style.display='none'">
+      VNT APP
+    </a>
+    <div class="nav-spacer"></div>
+    <a class="nav-link" href="https://github.com/lmq8267/VntApp" target="_blank">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+      GitHub
+    </a>
+    <a class="nav-btn" href="https://github.com/lmq8267/VntApp/releases" target="_blank">下载</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">
+    <div class="badge-dot"></div>
+    跨平台 &nbsp;·&nbsp; 开源免费 &nbsp;·&nbsp; 高性能
+  </div>
+  <h1>
+    <span class="accent">VNT APP</span> 是一个简单易用的<br>虚拟网络管理工具
+  </h1>
+  <p>基于 Flutter + Rust 构建，支持 Android、iOS、Windows、macOS、Linux，安全快速地组建虚拟局域网。</p>
+  <div class="hero-actions">
+    <a class="btn-primary" href="https://github.com/lmq8267/VntApp/releases" target="_blank">📦 下载应用</a>
+    <a class="btn-outline" href="https://github.com/lmq8267/VntApp" target="_blank">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+      查看源码
+    </a>
+  </div>
+</section>
+
+<div class="demo-wrap">
+  <!-- 动态提示 -->
+  <div class="demo-hint">
+    <div class="hint-pill">
+      <div class="hint-icon">
+        <svg viewBox="0 0 16 16" fill="none" stroke="var(--brand)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="3" width="14" height="10" rx="1.5"/>
+          <path d="M5 7l2 2 4-3"/>
+        </svg>
+      </div>
+      <span class="hint-text" id="hintText"></span>
+      <span class="hint-cursor"></span>
+      <span class="hint-arrow">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 8h10M9 4l4 4-4 4"/>
+        </svg>
+      </span>
+    </div>
+  </div>
+
+  <!-- Demo 窗口 -->
+  <div class="win-frame">
+    <div class="win-bar">
+      <img src="./app/icons/Icon-192.png" alt="" onerror="this.style.display='none'">
+      <span class="win-bar-title">VNT APP</span>
+      <div class="win-controls">
+        <div class="wc"><svg viewBox="0 0 10 10"><line x1="0" y1="5" x2="10" y2="5"/></svg></div>
+        <div class="wc"><svg viewBox="0 0 10 10"><rect x="0.5" y="0.5" width="9" height="9"/></svg></div>
+        <div class="wc close"><svg viewBox="0 0 10 10"><line x1="0" y1="0" x2="10" y2="10"/><line x1="10" y1="0" x2="0" y2="10"/></svg></div>
+      </div>
+    </div>
+    <div class="win-screen">
+      <div class="win-loading" id="loading">
+        <div class="spin"></div>
+        <span>正在加载 Demo，首次约需 10~30 秒…</span>
+      </div>
+      <iframe src="./app/" title="VNT APP" onload="document.getElementById('loading').style.display='none'"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="section" style="padding-top:0;">
+  <div class="stats-row">
+    <div class="stat-card reveal reveal-delay-1">
+      <div class="stat-num">5+</div>
+      <div class="stat-label">支持平台</div>
+    </div>
+    <div class="stat-card reveal reveal-delay-2">
+      <div class="stat-num">P2P</div>
+      <div class="stat-label">直连优先</div>
+    </div>
+    <div class="stat-card reveal reveal-delay-3">
+      <div class="stat-num">AES</div>
+      <div class="stat-label">加密传输</div>
+    </div>
+    <div class="stat-card reveal reveal-delay-4">
+      <div class="stat-num">0¥</div>
+      <div class="stat-label">永久免费</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="section" style="padding-top:0;">
+  <div class="section-eyebrow reveal">核心特性</div>
+  <div class="section-title reveal">为什么选择 VNT APP<br><span>专为现代网络场景设计</span></div>
+  <div class="features-grid">
+    <div class="feature reveal reveal-delay-1">
+      <div class="feature-icon-wrap">🌐</div>
+      <h3>全平台支持</h3>
+      <p>Android、iOS、Windows、macOS、Linux 一套代码，统一体验，随时随地保持连接。</p>
+    </div>
+    <div class="feature reveal reveal-delay-2">
+      <div class="feature-icon-wrap">⚡</div>
+      <h3>高性能内核</h3>
+      <p>Rust 编写的核心引擎，低延迟、高吞吐，P2P 直连优先，自动穿越 NAT 障碍。</p>
+    </div>
+    <div class="feature reveal reveal-delay-3">
+      <div class="feature-icon-wrap">🔒</div>
+      <h3>安全加密</h3>
+      <p>支持 AES-GCM、ChaCha20 等多种加密算法，数据指纹验证，端到端安全保障。</p>
+    </div>
+    <div class="feature reveal reveal-delay-4">
+      <div class="feature-icon-wrap">📊</div>
+      <h3>实时监控</h3>
+      <p>流量统计、设备延迟、丢包率、NAT 类型一目了然，网络状态尽在掌握。</p>
+    </div>
+    <div class="feature reveal reveal-delay-5">
+      <div class="feature-icon-wrap">🎯</div>
+      <h3>智能路由</h3>
+      <p>自动选择最优路径，支持中继回退，端口转发，保证最佳连接质量。</p>
+    </div>
+    <div class="feature reveal reveal-delay-6">
+      <div class="feature-icon-wrap">🛠️</div>
+      <h3>简单配置</h3>
+      <p>图形化界面，配置导入导出，多配置管理，一键连接，无需复杂命令行操作。</p>
+    </div>
+  </div>
+</div>
+
+<!-- DOWNLOAD -->
+<div class="download-section">
+  <div class="section">
+    <div class="section-eyebrow reveal">立即下载</div>
+    <div class="section-title reveal">选择你的平台<br><span>所有版本均免费开源</span></div>
+    <div class="platforms">
+      <a class="platform reveal reveal-delay-1" href="https://github.com/lmq8267/VntApp/releases" target="_blank"><span>🤖</span><span>Android APK</span></a>
+      <a class="platform reveal reveal-delay-2" href="https://github.com/lmq8267/VntApp/releases" target="_blank"><span>🍎</span><span>iOS IPA</span></a>
+      <a class="platform reveal reveal-delay-3" href="https://github.com/lmq8267/VntApp/releases" target="_blank"><span>🪟</span><span>Windows EXE</span></a>
+      <a class="platform reveal reveal-delay-4" href="https://github.com/lmq8267/VntApp/releases" target="_blank"><span>🍏</span><span>macOS DMG</span></a>
+      <a class="platform reveal reveal-delay-5" href="https://github.com/lmq8267/VntApp/releases" target="_blank"><span>🐧</span><span>Linux AppImage</span></a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>
+    © 2026 VNT APP
+    <span class="footer-sep"> &nbsp;·&nbsp; </span>
+    <a href="https://github.com/lmq8267/VntApp" target="_blank">GitHub</a>
+    <span class="footer-sep"> &nbsp;·&nbsp; </span>
+    Built with Flutter &amp; Rust
+  </p>
+</footer>
+
+<script>
+  // 打字机动态提示
+  const messages = [
+    '👆 点击下方APP窗口，可以直接体验！',
+    '🖱️ 基于真实的 Flutter Web 演示',
+    '📱 模拟完整的 VNT APP 操作界面',
+    '✨ 无需安装，即刻体验部分功能',
+  ];
+  let msgIdx = 0, charIdx = 0, deleting = false, paused = false;
+  const el = document.getElementById('hintText');
+  function typeWrite() {
+    if (paused) { setTimeout(typeWrite, 60); return; }
+    const cur = messages[msgIdx];
+    if (!deleting) {
+      el.textContent = cur.slice(0, ++charIdx);
+      if (charIdx === cur.length) {
+        paused = true;
+        setTimeout(() => { paused = false; deleting = true; typeWrite(); }, 3000);
+        return;
+      }
+      setTimeout(typeWrite, 55);
+    } else {
+      el.textContent = cur.slice(0, --charIdx);
+      if (charIdx === 0) {
+        deleting = false;
+        msgIdx = (msgIdx + 1) % messages.length;
+        setTimeout(typeWrite, 360);
+        return;
+      }
+      setTimeout(typeWrite, 26);
+    }
+  }
+  setTimeout(typeWrite, 900);
+
+  // 滚动渐入
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+
+</body>
+</html>

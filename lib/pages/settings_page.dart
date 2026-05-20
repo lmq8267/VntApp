@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:vnt_app/utils/platform_utils.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:vnt_app/theme/app_theme.dart';
 import 'package:vnt_app/theme/theme_provider.dart';
@@ -60,10 +62,10 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadData() async {
     _autoStart = await _dataPersistence.loadAutoStart() ?? false;
     // Linux 以实际文件存在为准（每次都检查，防止用户手动删除）
-    if (Platform.isLinux) {
-      final home = Platform.environment['SUDO_USER'] != null
-          ? '/home/${Platform.environment['SUDO_USER']}'
-          : Platform.environment['HOME'] ?? '';
+    if (PlatformUtils.isLinux) {
+      final home = PlatformUtils.environment['SUDO_USER'] != null
+          ? '/home/${PlatformUtils.environment['SUDO_USER']}'
+          : PlatformUtils.environment['HOME'] ?? '';
       if (home.isNotEmpty) {
         final fileExists = await File('$home/.config/autostart/vnt_app.desktop').exists();
         _autoStart = fileExists;
@@ -96,7 +98,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   String _windowsStartupExecutablePath() {
-    return Platform.resolvedExecutable;
+    return PlatformUtils.resolvedExecutable;
   }
 
   Future<ProcessResult> _runWindowsProcess(
@@ -165,7 +167,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<bool> _setStartupWithAdmin(bool enable) async {
-    if (!Platform.isWindows) {
+    if (!PlatformUtils.isWindows) {
       return false;
     }
 
@@ -294,9 +296,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _setLinuxAutoStart(bool enable) async {
     // 获取真实用户的 HOME（即使 sudo 运行也能拿到）
-    final home = Platform.environment['SUDO_USER'] != null
-        ? '/home/${Platform.environment['SUDO_USER']}'
-        : Platform.environment['HOME'] ?? '';
+    final home = PlatformUtils.environment['SUDO_USER'] != null
+        ? '/home/${PlatformUtils.environment['SUDO_USER']}'
+        : PlatformUtils.environment['HOME'] ?? '';
     if (home.isEmpty) {
       debugPrint('无法获取用户 HOME 目录');
       return;
@@ -310,7 +312,7 @@ class _SettingsPageState extends State<SettingsPage> {
         await Directory(autostartDir).create(recursive: true);
         
         // AppImage 需要用 APPIMAGE 环境变量，否则用 resolvedExecutable
-        final execPath = Platform.environment['APPIMAGE'] ?? Platform.resolvedExecutable;
+        final execPath = PlatformUtils.environment['APPIMAGE'] ?? PlatformUtils.resolvedExecutable;
         
         await File(desktopFile).writeAsString(
           '[Desktop Entry]\nType=Application\nName=VNT App\nExec=pkexec $execPath\nX-GNOME-Autostart-enabled=true\n',
@@ -331,7 +333,7 @@ class _SettingsPageState extends State<SettingsPage> {
   // 导出所有配置
   Future<void> _exportAllConfigs() async {
     try {
-      if (Platform.isAndroid) {
+      if (PlatformUtils.isAndroid) {
         final directory = await getTemporaryDirectory();
         final fileName = 'vnt_backup_${DateTime.now().millisecondsSinceEpoch}.json';
         final filePath = '${directory.path}/$fileName';
@@ -363,7 +365,7 @@ class _SettingsPageState extends State<SettingsPage> {
             showTopToast(context, '备份已取消', isSuccess: false);
           }
         }
-      } else if (Platform.isIOS) {
+      } else if (PlatformUtils.isIOS) {
         // iOS使用Share Sheet分享文件
         final tempDir = await getTemporaryDirectory();
         final fileName = 'vnt_backup_${DateTime.now().millisecondsSinceEpoch}.json';
@@ -763,22 +765,22 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Column(
         children: [
           // 开机自启（Windows 和 Android）
-          if (Platform.isWindows || Platform.isAndroid || Platform.isLinux) ...[
+          if (PlatformUtils.isWindows || PlatformUtils.isAndroid || PlatformUtils.isLinux) ...[
             _buildSettingItem(
               isDark,
               icon: Icons.play_circle_outline,
               title: '开机自启',
-              subtitle: Platform.isWindows
+              subtitle: PlatformUtils.isWindows
                   ? '系统启动时自动运行应用'
-                  : Platform.isLinux
+                  : PlatformUtils.isLinux
                       ? '写入 ~/.config/autostart 实现开机自启'
                       : '下次开机时自动启动应用',
-              trailing: Platform.isWindows
+              trailing: PlatformUtils.isWindows
                   ? _buildWindowsAutoStartControl(isDark)
                   : Switch(
                       value: _autoStart,
                       onChanged: (value) async {
-                        if (Platform.isLinux) {
+                        if (PlatformUtils.isLinux) {
                           await _setLinuxAutoStart(value);
                         }
                         await _dataPersistence.saveAutoStart(value);
@@ -817,7 +819,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildDivider(isDark),
           _buildDefaultConfigSelector(isDark),
           // 桌面端: 重置关闭行为
-          if (Platform.isWindows || Platform.isLinux) ...[
+          if (PlatformUtils.isWindows || PlatformUtils.isLinux) ...[
             _buildDivider(isDark),
             _buildSettingItem(
               isDark,
@@ -1009,22 +1011,24 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       child: Column(
         children: [
-          _buildSettingItem(
-            isDark,
-            icon: Icons.backup_outlined,
-            title: '备份所有配置',
-            subtitle: '将所有配置导出为文件',
-            onTap: _exportAllConfigs,
-          ),
-          _buildDivider(isDark),
-          _buildSettingItem(
-            isDark,
-            icon: Icons.restore,
-            title: '恢复备份数据',
-            subtitle: '从备份文件恢复配置',
-            onTap: _importAllConfigs,
-          ),
-          _buildDivider(isDark),
+          if (!kIsWeb) ...[
+            _buildSettingItem(
+              isDark,
+              icon: Icons.backup_outlined,
+              title: '备份所有配置',
+              subtitle: '将所有配置导出为文件',
+              onTap: _exportAllConfigs,
+            ),
+            _buildDivider(isDark),
+            _buildSettingItem(
+              isDark,
+              icon: Icons.restore,
+              title: '恢复备份数据',
+              subtitle: '从备份文件恢复配置',
+              onTap: _importAllConfigs,
+            ),
+            _buildDivider(isDark),
+          ],
           _buildSettingItem(
             isDark,
             icon: Icons.delete_outline,

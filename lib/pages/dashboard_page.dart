@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:vnt_app/theme/app_theme.dart';
 import 'package:vnt_app/vnt/vnt_manager.dart';
@@ -10,6 +12,8 @@ import 'package:vnt_app/network_config.dart';
 import 'package:vnt_app/utils/toast_utils.dart';
 import 'package:vnt_app/utils/responsive_utils.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:vnt_app/web_demo_vnt_manager.dart';
+import 'package:vnt_app/web_demo_config.dart';
 
 /// 仪表盘页面
 class DashboardPage extends StatefulWidget {
@@ -17,6 +21,7 @@ class DashboardPage extends StatefulWidget {
   final VoidCallback? onNavigateToSettings;
   final VoidCallback? onDisconnect;
   final VoidCallback? onConnect;
+  final int connectionVersion;
 
   const DashboardPage({
     super.key,
@@ -24,6 +29,7 @@ class DashboardPage extends StatefulWidget {
     this.onNavigateToSettings,
     this.onDisconnect,
     this.onConnect,
+    this.connectionVersion = 0,
   });
 
   @override
@@ -32,6 +38,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   Timer? _timer;
+  StreamSubscription? _webDemoSub;
   int _connectionCount = 0;
   int _deviceCount = 0;
   String _totalUpStream = '0B';
@@ -111,17 +118,28 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     _loadDefaultConfig();
     _updateStats();
-    // 每2秒更新一次数据
-    _timer = Timer.periodic(const Duration(seconds: 2), (_) {
+    _timer = Timer.periodic(kIsWeb ? const Duration(seconds: 1) : const Duration(seconds: 2), (_) {
       _updateStats();
-      // 定期检查默认配置是否有变化
       _checkDefaultConfigChange();
     });
+    // Web 模式：监听连接状态变化，立即刷新
+    if (kIsWeb) {
+      _webDemoSub = WebDemoVntManager.statusStream.listen((_) => _updateStats());
+    }
+  }
+
+  @override
+  void didUpdateWidget(DashboardPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (kIsWeb && widget.connectionVersion != oldWidget.connectionVersion) {
+      _updateStats();
+    }
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _webDemoSub?.cancel();
     super.dispose();
   }
 
@@ -176,7 +194,7 @@ class _DashboardPageState extends State<DashboardPage> {
   String _deviceConnectionLabel(RustPeerClientInfo device, RustRoute? route) {
     if (_isGatewayIp(device.virtualIp)) return '服务器';
     if (_isDeviceOnline(device.status) && _hasPasswordMismatch(device)) return '参数不匹配';
-    if (route == null || route.rt <= 0 || route.rt >= 9999) return '未连通';
+    if (route == null || route.rt.toInt() <= 0 || route.rt.toInt() >= 9999) return '未连通';
     return _formatRouteLabel(route.natTraversalType);
   }
 
@@ -288,169 +306,254 @@ class _DashboardPageState extends State<DashboardPage> {
     String natType = ''; // NAT类型
 
     // 速率数据（直接使用状态变量，不创建新列表）
-    String currentUpSpeed = '0 B/s';
-    String currentDownSpeed = '0 B/s';
+    String currentUpSpeed = _currentUpSpeed;
+    String currentDownSpeed = _currentDownSpeed;
     double maxUpSpeed = _maxUpSpeed;
     double maxDownSpeed = _maxDownSpeed;
 
-    final allVnts = vntManager.map;
-
-    for (var entry in allVnts.entries) {
-      final vntBox = entry.value;
-      if (!vntBox.isClosed()) {
-        final devices = vntBox.peerDeviceList();
-        deviceCount += devices.length;
-
-        // 计算离线设备数
-        for (var device in devices) {
-          if (device.status != 'Online') {
-            offlineDeviceCount++;
-          }
+    // Web Demo 模式
+    if (kIsWeb && WebDemoVntManager.isConnected) {
+      final devices = DemoModeConfig.getMockDevices();
+      deviceCount = devices.length;
+      offlineDeviceCount = devices.where((d) => d['status'] == 'offline').length;
+      
+      // 获取流量
+      final uploadBytes = DemoModeConfig.uploadBytes;
+      final downloadBytes = DemoModeConfig.downloadBytes;
+      upStream = _formatBytes(uploadBytes.toDouble());
+      downStream = _formatBytes(downloadBytes.toDouble());
+      
+      // 计算速率
+      if (!_isFirstUpdate) {
+        double upSpeed = (uploadBytes - _lastUpBytes) / 2.0;
+        double downSpeed = (downloadBytes - _lastDownBytes) / 2.0;
+        
+        if (upSpeed < 0) upSpeed = 0;
+        if (downSpeed < 0) downSpeed = 0;
+        
+        _uploadSpeedHistory.add(upSpeed);
+        _downloadSpeedHistory.add(downSpeed);
+        
+        if (_uploadSpeedHistory.length > 100) _uploadSpeedHistory.removeAt(0);
+        if (_downloadSpeedHistory.length > 100) _downloadSpeedHistory.removeAt(0);
+        
+        currentUpSpeed = _formatSpeed(upSpeed);
+        currentDownSpeed = _formatSpeed(downSpeed);
+        
+        if (upSpeed > _peakUpSpeed) _peakUpSpeed = upSpeed;
+        if (downSpeed > _peakDownSpeed) _peakDownSpeed = downSpeed;
+        
+        _totalUpSpeed += upSpeed;
+        _totalDownSpeed += downSpeed;
+        _speedSampleCount++;
+        
+        _avgUpSpeed = _totalUpSpeed / _speedSampleCount;
+        _avgDownSpeed = _totalDownSpeed / _speedSampleCount;
+        
+        if (_uploadSpeedHistory.isNotEmpty) {
+          maxUpSpeed = _uploadSpeedHistory.reduce((a, b) => a > b ? a : b);
         }
-
-        // 获取总流量（直接使用API返回的字符串）
-        upStream = vntBox.upStream();
-        downStream = vntBox.downStream();
-
-        // 解析流量字符串为字节数（用于计算速率）
-        double currentUpBytes = _parseTrafficToBytes(upStream);
-        double currentDownBytes = _parseTrafficToBytes(downStream);
-
-        // 计算速率（当前流量 - 上次流量）/ 时间间隔
-        // 时间间隔是2秒（定时器周期）
-        if (!_isFirstUpdate) {
-          double upSpeed = (currentUpBytes - _lastUpBytes) / 2.0;  // 字节/秒
-          double downSpeed = (currentDownBytes - _lastDownBytes) / 2.0;
-
-          // 如果速率为负（可能是重启或重置），设为0
-          if (upSpeed < 0) upSpeed = 0;
-          if (downSpeed < 0) downSpeed = 0;
-
-          // 添加到历史记录（保持最近100个数据点）
-          _uploadSpeedHistory.add(upSpeed);
-          _downloadSpeedHistory.add(downSpeed);
-
-          if (_uploadSpeedHistory.length > 100) {
-            _uploadSpeedHistory.removeAt(0);
-          }
-          if (_downloadSpeedHistory.length > 100) {
-            _downloadSpeedHistory.removeAt(0);
-          }
-
-          // 更新当前速率显示
-          currentUpSpeed = _formatSpeed(upSpeed);
-          currentDownSpeed = _formatSpeed(downSpeed);
-
-          // 更新峰值速度
-          if (upSpeed > _peakUpSpeed) {
-            _peakUpSpeed = upSpeed;
-          }
-          if (downSpeed > _peakDownSpeed) {
-            _peakDownSpeed = downSpeed;
-          }
-
-          // 累计速度用于计算平均值
-          _totalUpSpeed += upSpeed;
-          _totalDownSpeed += downSpeed;
-          _speedSampleCount++;
-
-          // 计算平均速度
-          _avgUpSpeed = _totalUpSpeed / _speedSampleCount;
-          _avgDownSpeed = _totalDownSpeed / _speedSampleCount;
-
-          // 计算最大速率（用于图表Y轴）
-          if (_uploadSpeedHistory.isNotEmpty) {
-            maxUpSpeed = _uploadSpeedHistory.reduce((a, b) => a > b ? a : b);
-          }
-          if (_downloadSpeedHistory.isNotEmpty) {
-            maxDownSpeed = _downloadSpeedHistory.reduce((a, b) => a > b ? a : b);
-          }
-        } else {
-          _isFirstUpdate = false;
+        if (_downloadSpeedHistory.isNotEmpty) {
+          maxDownSpeed = _downloadSpeedHistory.reduce((a, b) => a > b ? a : b);
         }
-
-        // 保存当前流量值，用于下次计算速率
-        _lastUpBytes = currentUpBytes;
-        _lastDownBytes = currentDownBytes;
-
-        // 获取配置名
-        final config = vntBox.getNetConfig();
-        if (config != null) {
-          configName = config.configName;
-          isEncrypted = config.groupPassword.isNotEmpty;
-
-          // 获取加密算法
-          if (isEncrypted) {
-            encryptionAlgorithm = config.encryptionAlgorithm.isNotEmpty
-                ? config.encryptionAlgorithm.toUpperCase()
-                : 'AES-GCM';
-          }
-
-          // 获取协议类型
-          protocol = config.protocol.isNotEmpty ? config.protocol.toUpperCase() : 'UDP';
-
-          // 获取用户配置的服务器地址（而不是解析后的地址）
-          relayServer = config.serverAddress;
-
-          // 判断虚拟IP是否为自动分配（配置中的virtualIPv4为空表示自动分配）
-          _isVirtualIpAutoAssigned = config.virtualIPv4.isEmpty;
+      } else {
+        _isFirstUpdate = false;
+      }
+      
+      _lastUpBytes = uploadBytes.toDouble();
+      _lastDownBytes = downloadBytes.toDouble();
+      
+      // 获取配置信息
+      final config = WebDemoVntManager.currentConfig;
+      if (config != null) {
+        configName = config.configName;
+        isEncrypted = config.groupPassword.isNotEmpty;
+        encryptionAlgorithm = config.encryptionAlgorithm;
+        protocol = config.protocol;
+        deviceName = config.deviceName;
+        relayServer = config.serverAddress;
+      }
+      
+      // 获取当前设备信息
+      final currentDevice = DemoModeConfig.getCurrentDeviceInfo(
+        config?.virtualIPv4 ?? '10.26.0.100'
+      );
+      virtualIp = currentDevice['virtualIp'] ?? '';
+      natType = currentDevice['natType'] ?? '';
+      
+      // 计算平均延迟
+      for (var device in devices) {
+        if (device['status'] == 'online') {
+          totalLatency += device['latency'] as int;
+          latencyCount++;
         }
+      }
 
-        // 获取当前设备信息
-        final currentDevice = vntBox.currentDevice();
-        virtualIp = currentDevice['virtualIp'] ?? '';
-        final virtualGateway = currentDevice['virtualGateway'] ?? '';
+      // 模拟网关连通性（98% 成功率）
+      _gatewayConnectivityHistory.add(Random().nextInt(100) < 98);
+      if (_gatewayConnectivityHistory.length > 100) _gatewayConnectivityHistory.removeAt(0);
+      _pingHistory.add(true);
+      if (_pingHistory.length > 100) _pingHistory.removeAt(0);
+    } else {
+      // 原生模式
+      final allVnts = vntManager.map;
+      for (var entry in allVnts.entries) {
+        final vntBox = entry.value;
+        if (!vntBox.isClosed()) {
+          final devices = vntBox.peerDeviceList();
+          deviceCount += devices.length;
 
-        // 获取NAT类型
-        natType = currentDevice['natType'] ?? '';
-
-        deviceName = config?.deviceName ?? '';
-
-        // 计算平均延迟
-        for (var device in devices) {
-          final route = vntBox.route(device.virtualIp);
-          if (route != null && route.rt > 0 && route.rt < 9999) {
-            totalLatency += route.rt;
-            latencyCount++;
-          }
-        }
-
-        // 检查网关连通性（用于计算丢包率）
-        if (virtualGateway.isNotEmpty) {
-          final gatewayRoute = vntBox.route(virtualGateway);
-          bool isConnected = false;
-          bool shouldRecord = true;
-
-          // route.rt > 0 且 < 9999 表示连通，0 或 9999 表示不通
-          if (gatewayRoute != null && gatewayRoute.rt > 0 && gatewayRoute.rt < 9999) {
-            isConnected = true;
-            // 使用网关的延迟作为平均延迟（如果没有其他设备）
-            if (latencyCount == 0) {
-              totalLatency = gatewayRoute.rt;
-              latencyCount = 1;
-            }
-          } else if (gatewayRoute != null && (gatewayRoute.rt == 0 || gatewayRoute.rt == 9999)) {
-            // 前10次出现0或9999时不纳入统计（连接初始化阶段）
-            if (_connectivityCheckCount < 10) {
-              shouldRecord = false;
+          // 计算离线设备数
+          for (var device in devices) {
+            if (device.status != 'Online') {
+              offlineDeviceCount++;
             }
           }
 
-          // 增加检查计数
-          _connectivityCheckCount++;
+          // 获取总流量（直接使用API返回的字符串）
+          upStream = vntBox.upStream();
+          downStream = vntBox.downStream();
 
-          // 只有shouldRecord为true时才添加到历史记录
-          if (shouldRecord) {
-            // 添加到历史记录（保持最近 50 个数据点）
-            _gatewayConnectivityHistory.add(isConnected);
-            if (_gatewayConnectivityHistory.length > 50) {
-              _gatewayConnectivityHistory.removeAt(0);
+          // 解析流量字符串为字节数（用于计算速率）
+          double currentUpBytes = _parseTrafficToBytes(upStream);
+          double currentDownBytes = _parseTrafficToBytes(downStream);
+
+          // 计算速率（当前流量 - 上次流量）/ 时间间隔
+          // 时间间隔是2秒（定时器周期）
+          if (!_isFirstUpdate) {
+            double upSpeed = (currentUpBytes - _lastUpBytes) / 2.0;  // 字节/秒
+            double downSpeed = (currentDownBytes - _lastDownBytes) / 2.0;
+
+            // 如果速率为负（可能是重启或重置），设为0
+            if (upSpeed < 0) upSpeed = 0;
+            if (downSpeed < 0) downSpeed = 0;
+
+            // 添加到历史记录（保持最近100个数据点）
+            _uploadSpeedHistory.add(upSpeed);
+            _downloadSpeedHistory.add(downSpeed);
+
+            if (_uploadSpeedHistory.length > 100) {
+              _uploadSpeedHistory.removeAt(0);
+            }
+            if (_downloadSpeedHistory.length > 100) {
+              _downloadSpeedHistory.removeAt(0);
             }
 
-            // 同时添加到Ping历史（保持最近 100 个数据点）
-            _pingHistory.add(isConnected);
-            if (_pingHistory.length > 100) {
-              _pingHistory.removeAt(0);
+            // 更新当前速率显示
+            currentUpSpeed = _formatSpeed(upSpeed);
+            currentDownSpeed = _formatSpeed(downSpeed);
+
+            // 更新峰值速度
+            if (upSpeed > _peakUpSpeed) {
+              _peakUpSpeed = upSpeed;
+            }
+            if (downSpeed > _peakDownSpeed) {
+              _peakDownSpeed = downSpeed;
+            }
+
+            // 累计速度用于计算平均值
+            _totalUpSpeed += upSpeed;
+            _totalDownSpeed += downSpeed;
+            _speedSampleCount++;
+
+            // 计算平均速度
+            _avgUpSpeed = _totalUpSpeed / _speedSampleCount;
+            _avgDownSpeed = _totalDownSpeed / _speedSampleCount;
+
+            // 计算最大速率（用于图表Y轴）
+            if (_uploadSpeedHistory.isNotEmpty) {
+              maxUpSpeed = _uploadSpeedHistory.reduce((a, b) => a > b ? a : b);
+            }
+            if (_downloadSpeedHistory.isNotEmpty) {
+              maxDownSpeed = _downloadSpeedHistory.reduce((a, b) => a > b ? a : b);
+            }
+          } else {
+            _isFirstUpdate = false;
+          }
+
+          // 保存当前流量值，用于下次计算速率
+          _lastUpBytes = currentUpBytes;
+          _lastDownBytes = currentDownBytes;
+
+          // 获取配置名
+          final config = vntBox.getNetConfig();
+          if (config != null) {
+            configName = config.configName;
+            isEncrypted = config.groupPassword.isNotEmpty;
+
+            // 获取加密算法
+            if (isEncrypted) {
+              encryptionAlgorithm = config.encryptionAlgorithm.isNotEmpty
+                  ? config.encryptionAlgorithm.toUpperCase()
+                  : 'AES-GCM';
+            }
+
+            // 获取协议类型
+            protocol = config.protocol.isNotEmpty ? config.protocol.toUpperCase() : 'UDP';
+
+            // 获取用户配置的服务器地址（而不是解析后的地址）
+            relayServer = config.serverAddress;
+
+            // 判断虚拟IP是否为自动分配（配置中的virtualIPv4为空表示自动分配）
+            _isVirtualIpAutoAssigned = config.virtualIPv4.isEmpty;
+          }
+
+          // 获取当前设备信息
+          final currentDevice = vntBox.currentDevice();
+          virtualIp = currentDevice['virtualIp'] ?? '';
+          final virtualGateway = currentDevice['virtualGateway'] ?? '';
+
+          // 获取NAT类型
+          natType = currentDevice['natType'] ?? '';
+
+          deviceName = config?.deviceName ?? '';
+
+          // 计算平均延迟
+          for (var device in devices) {
+            final route = vntBox.route(device.virtualIp);
+            if (route != null && route.rt.toInt() > 0 && route.rt.toInt() < 9999) {
+              totalLatency += route.rt.toInt();
+              latencyCount++;
+            }
+          }
+
+          // 检查网关连通性（用于计算丢包率）
+          if (virtualGateway.isNotEmpty) {
+            final gatewayRoute = vntBox.route(virtualGateway);
+            bool isConnected = false;
+            bool shouldRecord = true;
+
+            // route.rt > 0 且 < 9999 表示连通，0 或 9999 表示不通
+            if (gatewayRoute != null && gatewayRoute.rt.toInt() > 0 && gatewayRoute.rt.toInt() < 9999) {
+              isConnected = true;
+              // 使用网关的延迟作为平均延迟（如果没有其他设备）
+              if (latencyCount == 0) {
+                totalLatency = gatewayRoute.rt.toInt();
+                latencyCount = 1;
+              }
+            } else if (gatewayRoute != null && (gatewayRoute.rt.toInt() == 0 || gatewayRoute.rt.toInt() == 9999)) {
+              // 前10次出现0或9999时不纳入统计（连接初始化阶段）
+              if (_connectivityCheckCount < 10) {
+                shouldRecord = false;
+              }
+            }
+
+            // 增加检查计数
+            _connectivityCheckCount++;
+
+            // 只有shouldRecord为true时才添加到历史记录
+            if (shouldRecord) {
+              // 添加到历史记录（保持最近 50 个数据点）
+              _gatewayConnectivityHistory.add(isConnected);
+              if (_gatewayConnectivityHistory.length > 50) {
+                _gatewayConnectivityHistory.removeAt(0);
+              }
+
+              // 同时添加到Ping历史（保持最近 100 个数据点）
+              _pingHistory.add(isConnected);
+              if (_pingHistory.length > 100) {
+                _pingHistory.removeAt(0);
+              }
             }
           }
         }
@@ -467,7 +570,7 @@ class _DashboardPageState extends State<DashboardPage> {
     }
 
     setState(() {
-      _connectionCount = vntManager.size();
+      _connectionCount = kIsWeb ? (WebDemoVntManager.isConnected ? 1 : 0) : vntManager.size();
       _deviceCount = deviceCount;
       _offlineDeviceCount = offlineDeviceCount;
       _totalUpStream = upStream;
@@ -1185,9 +1288,9 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ],
         ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             children: [
               Icon(Icons.signal_cellular_alt, color: primaryColor, size: context.iconSize(20)),
@@ -1379,9 +1482,9 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ],
         ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             children: [
               Icon(Icons.pie_chart, color: primaryColor, size: context.iconSize(20)),
@@ -1983,6 +2086,8 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   // 格式化流量显示
+  String _formatBytes(double bytes) => _formatTraffic(bytes);
+
   String _formatTraffic(double bytes) {
     if (bytes < 1024) {
       return '${bytes.toStringAsFixed(0)} B';
@@ -4216,8 +4321,8 @@ class _DashboardPageState extends State<DashboardPage> {
           int rtValue = 0;
           p2pRelay = _deviceConnectionLabel(device, route);
           if (route != null) {
-            rtValue = route.rt;
-            rt = route.rt > 0 && route.rt < 9999 ? '${route.rt}ms' : '--';
+            rtValue = route.rt.toInt();
+            rt = route.rt.toInt() > 0 && route.rt.toInt() < 9999 ? '${route.rt.toInt()}ms' : '--';
           }
 
           // 获取NAT类型信息

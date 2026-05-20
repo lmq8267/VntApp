@@ -1,9 +1,9 @@
 name: VntApp
 
 on:
-  push:
-    branches:
-      - flutter
+  # push:
+  #  branches:
+  #    - flutter
   workflow_dispatch:
     inputs:
       rebuild_android_so:

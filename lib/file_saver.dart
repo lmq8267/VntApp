@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:vnt_app/utils/platform_utils.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -17,7 +18,7 @@ class FileSaver {
     required String fileName,
     String? mimeType,
   }) async {
-    if (!Platform.isAndroid) {
+    if (!PlatformUtils.isAndroid) {
       throw UnsupportedError('This method is only supported on Android');
     }
 
@@ -41,7 +42,7 @@ class FileSaver {
     required String fileName,
     String? mimeType,
   }) async {
-    if (!Platform.isAndroid) {
+    if (!PlatformUtils.isAndroid) {
       throw UnsupportedError('This method is only supported on Android');
     }
 
@@ -75,7 +76,7 @@ class FileSaver {
     required String fileName,
     String? mimeType,
   }) async {
-    if (!Platform.isAndroid) {
+    if (!PlatformUtils.isAndroid) {
       throw UnsupportedError('This method is only supported on Android');
     }
 

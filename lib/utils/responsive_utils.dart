@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:vnt_app/utils/platform_utils.dart';
 import 'package:flutter/material.dart';
 
 /// 响应式工具类
@@ -14,7 +15,7 @@ class ResponsiveUtils {
     final isPortrait = height > width;
 
     // 判断是否为桌面平台（Windows、Linux、macOS）
-    final isDesktop = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+    final isDesktop = PlatformUtils.isWindows || PlatformUtils.isLinux || PlatformUtils.isMacOS;
 
     if (isDesktop) {
       // 桌面平台：基于宽度的缩放
@@ -66,7 +67,7 @@ class ResponsiveUtils {
   /// 获取字体缩放比例（比整体缩放稍微保守一些，确保可读性）
   static double getFontScaleFactor(BuildContext context) {
     final scaleFactor = getScaleFactor(context);
-    final isDesktop = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+    final isDesktop = PlatformUtils.isWindows || PlatformUtils.isLinux || PlatformUtils.isMacOS;
 
     if (isDesktop) {
       return scaleFactor; // 桌面端字体跟随整体缩放
@@ -127,12 +128,12 @@ class ResponsiveUtils {
 
   /// 判断是否为桌面平台
   static bool isDesktop() {
-    return Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+    return PlatformUtils.isWindows || PlatformUtils.isLinux || PlatformUtils.isMacOS;
   }
 
   /// 判断是否为移动平台
   static bool isMobile() {
-    return Platform.isAndroid || Platform.isIOS;
+    return PlatformUtils.isAndroid || PlatformUtils.isIOS;
   }
 
   /// 判断是否为平板（基于屏幕尺寸）

@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VNT APP - 跨平台虚拟网络工具</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --teal: #00E5C8;
+      --teal-mid: #00BFA5;
+      --teal-dark: #00796B;
+      --teal-glow: rgba(0, 229, 200, 0.18);
+      --teal-glow-soft: rgba(0, 191, 165, 0.10);
+      --bg: #07090F;
+      --bg-2: #0D1117;
+      --bg-3: #111820;
+      --surface: rgba(255,255,255,0.04);
+      --surface-hover: rgba(255,255,255,0.07);
+      --glass: rgba(255,255,255,0.06);
+      --glass-border: rgba(255,255,255,0.10);
+      --glass-border-teal: rgba(0, 229, 200, 0.25);
+      --text: #EEF2F7;
+      --text-2: #8B9BB4;
+      --text-3: #4A5568;
+      --radius: 14px;
+      --radius-lg: 20px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* BACKGROUND MESHES */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -40%;
+      left: -20%;
+      width: 80vw;
+      height: 80vw;
+      background: radial-gradient(ellipse, rgba(0,191,165,0.07) 0%, transparent 65%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -30%;
+      right: -15%;
+      width: 60vw;
+      height: 60vw;
+      background: radial-gradient(ellipse, rgba(0,100,200,0.06) 0%, transparent 65%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(7, 9, 15, 0.72);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 28px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+    .nav-logo-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--teal-mid), #007AFF);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .nav-logo img { width: 30px; height: 30px; border-radius: 8px; }
+    .nav-spacer { flex: 1; }
+    .nav-link {
+      font-size: 0.875rem;
+      color: var(--text-2);
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 8px;
+      transition: color 0.2s, background 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+    }
+    .nav-link:hover { color: var(--text); background: var(--surface-hover); }
+    .nav-link svg { opacity: 0.7; }
+    .nav-btn {
+      font-family: 'Sora', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--bg);
+      background: var(--teal);
+      text-decoration: none;
+      padding: 8px 18px;
+      border-radius: 20px;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      letter-spacing: 0.01em;
+    }
+    .nav-btn:hover {
+      background: #00F5D8;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(0,229,200,0.35);
+    }
+
+    /* HERO */
+    .hero {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 110px 28px 60px;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--teal);
+      background: rgba(0,229,200,0.10);
+      border: 1px solid rgba(0,229,200,0.22);
+      border-radius: 20px;
+      padding: 5px 14px;
+      margin-bottom: 28px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      animation: fadeInDown 0.6s ease both;
+    }
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--teal);
+      animation: pulse-dot 2s ease infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.7); }
+    }
+    .hero h1 {
+      font-family: 'Sora', sans-serif;
+      font-size: clamp(2.4rem, 5.5vw, 4rem);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.1;
+      margin-bottom: 22px;
+      animation: fadeInUp 0.7s 0.1s ease both;
+    }
+    .hero h1 .accent {
+      background: linear-gradient(90deg, var(--teal) 0%, #5BE8FF 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--text-2);
+      max-width: 520px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+      font-weight: 400;
+      animation: fadeInUp 0.7s 0.2s ease both;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 72px;
+      animation: fadeInUp 0.7s 0.3s ease both;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Sora', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--bg);
+      background: var(--teal);
+      text-decoration: none;
+      padding: 12px 26px;
+      border-radius: 10px;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      letter-spacing: 0.01em;
+    }
+    .btn-primary:hover {
+      background: #00F5D8;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(0,229,200,0.38);
+    }
+    .btn-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Sora', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-2);
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      text-decoration: none;
+      padding: 12px 26px;
+      border-radius: 10px;
+      transition: border-color 0.2s, color 0.2s, transform 0.15s, background 0.2s;
+      backdrop-filter: blur(8px);
+    }
+    .btn-outline:hover {
+      border-color: var(--glass-border-teal);
+      color: var(--teal);
+      background: rgba(0,229,200,0.07);
+      transform: translateY(-2px);
+    }
+
+    /* DEMO SECTION */
+    .demo-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 28px 100px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ANIMATED HINT */
+    .demo-hint {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 20px;
+      animation: fadeInUp 0.7s 0.5s ease both;
+      position: relative;
+    }
+    .hint-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      background: rgba(0,229,200,0.08);
+      border: 1px solid rgba(0,229,200,0.20);
+      border-radius: 40px;
+      backdrop-filter: blur(12px);
+    }
+    .hint-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(0,229,200,0.15);
+      border: 1px solid rgba(0,229,200,0.30);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: bounce-icon 2.2s ease infinite;
+      flex-shrink: 0;
+    }
+    .hint-icon svg { width: 14px; height: 14px; }
+    @keyframes bounce-icon {
+      0%, 100% { transform: translateY(0) scale(1); }
+      30% { transform: translateY(-4px) scale(1.05); }
+      60% { transform: translateY(2px) scale(0.97); }
+    }
+    .hint-text {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--teal);
+      letter-spacing: 0.01em;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .hint-text .word {
+      display: inline-block;
+      animation: shimmer-word 0.5s ease both;
+    }
+    .hint-arrow {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 4px;
+      color: var(--teal);
+      animation: arrow-bounce 1.8s ease infinite;
+    }
+    @keyframes arrow-bounce {
+      0%, 100% { transform: translateX(0); opacity: 0.7; }
+      50% { transform: translateX(4px); opacity: 1; }
+    }
+    .hint-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 14px;
+      background: var(--teal);
+      margin-left: 2px;
+      border-radius: 1px;
+      animation: blink 1s step-end infinite;
+      vertical-align: middle;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* DEMO WINDOW */
+    .win-frame {
+      border-radius: 16px;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.08),
+        0 0 60px rgba(0,229,200,0.06),
+        0 24px 80px rgba(0,0,0,0.6),
+        0 4px 8px rgba(0,0,0,0.4);
+      overflow: hidden;
+      background: var(--bg-3);
+      position: relative;
+      animation: fadeInUp 0.8s 0.4s ease both;
+      transform-origin: top center;
+    }
+    .win-frame::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      border: 1px solid transparent;
+      background: linear-gradient(135deg, rgba(0,229,200,0.18), rgba(255,255,255,0.05), rgba(0,100,200,0.12)) border-box;
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: destination-out;
+      mask-composite: exclude;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .win-bar {
+      height: 40px;
+      background: rgba(255,255,255,0.035);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      gap: 8px;
+      backdrop-filter: blur(4px);
+    }
+    .win-dots {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-right: 4px;
+    }
+    .win-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+    .win-dot.red { background: #FF5F57; }
+    .win-dot.yellow { background: #FFBD2E; }
+    .win-dot.green { background: #28C840; }
+    .win-bar-icon img { width: 15px; height: 15px; border-radius: 3px; }
+    .win-bar-icon { display: flex; align-items: center; }
+    .win-bar-title {
+      flex: 1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      text-align: center;
+      letter-spacing: 0.03em;
+    }
+    .win-bar-actions {
+      display: flex;
+      gap: 2px;
+    }
+    .wc {
+      width: 32px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      cursor: default;
+      transition: background 0.15s;
+      color: rgba(255,255,255,0.25);
+    }
+    .wc:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); }
+    .wc svg { width: 10px; height: 10px; stroke: currentColor; stroke-width: 1.5; fill: none; }
+    .win-screen {
+      position: relative;
+      width: 100%;
+      padding-top: 60%;
+      background: #1A1F2E;
+    }
+    .win-screen iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .win-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: rgba(255,255,255,0.5);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: #1A1F2E;
+    }
+    .loading-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(0,229,200,0.08);
+      border: 1px solid rgba(0,229,200,0.20);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 4px;
+    }
+    .spin {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(0,229,200,0.2);
+      border-top-color: var(--teal);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-dots {
+      display: flex;
+      gap: 5px;
+    }
+    .loading-dots span {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--teal);
+      opacity: 0.3;
+      animation: dot-pulse 1.4s ease infinite;
+    }
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dot-pulse {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.3); }
+    }
+
+    /* FEATURES */
+    .section {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 90px 28px;
+      position: relative;
+      z-index: 1;
+    }
+    .section-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 14px;
+    }
+    .section-eyebrow::before {
+      content: '';
+      display: block;
+      width: 20px;
+      height: 1.5px;
+      background: var(--teal);
+      border-radius: 1px;
+    }
+    .section-title {
+      font-family: 'Sora', sans-serif;
+      font-size: clamp(1.7rem, 3vw, 2.4rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 52px;
+      line-height: 1.2;
+    }
+    .section-title span { color: var(--text-2); font-weight: 400; }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 760px) { .features-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .features-grid { grid-template-columns: 1fr; } }
+
+    .feature {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 28px 26px;
+      transition: background 0.25s, border-color 0.25s, transform 0.2s;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      cursor: default;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feature:hover {
+      background: var(--surface-hover);
+      border-color: rgba(0,229,200,0.18);
+      transform: translateY(-3px);
+    }
+    .feature:hover::after { opacity: 1; }
+    .feature-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 11px;
+      background: rgba(0,229,200,0.10);
+      border: 1px solid rgba(0,229,200,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      margin-bottom: 16px;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .feature:hover .feature-icon-wrap {
+      background: rgba(0,229,200,0.16);
+      transform: scale(1.05);
+    }
+    .feature h3 {
+      font-family: 'Sora', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+    .feature p { font-size: 0.875rem; color: var(--text-2); line-height: 1.65; }
+
+    /* STATS */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin: 0 0 80px;
+    }
+    @media (max-width: 640px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+    .stat-card {
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 22px 20px;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .stat-card:hover { border-color: rgba(0,229,200,0.22); transform: translateY(-2px); }
+    .stat-num {
+      font-family: 'Sora', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(90deg, var(--teal), #5BE8FF);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-2);
+      margin-top: 6px;
+      font-weight: 500;
+    }
+
+    /* DOWNLOAD */
+    .download-section {
+      background: rgba(255,255,255,0.02);
+      border-top: 1px solid rgba(255,255,255,0.07);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      position: relative;
+      overflow: hidden;
+    }
+    .download-section::before {
+      content: '';
+      position: absolute;
+      top: -100%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 400px;
+      background: radial-gradient(ellipse, rgba(0,191,165,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .platforms {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .platform {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 20px;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      text-decoration: none;
+      color: var(--text-2);
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: border-color 0.2s, color 0.2s, background 0.2s, transform 0.15s;
+      backdrop-filter: blur(8px);
+    }
+    .platform:hover {
+      border-color: var(--glass-border-teal);
+      color: var(--teal);
+      background: rgba(0,229,200,0.07);
+      transform: translateY(-2px);
+    }
+    .platform .platform-emoji { font-size: 1.3rem; }
+
+    /* DIVIDER */
+    .section-divider {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 28px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding: 36px 28px;
+      text-align: center;
+      font-size: 0.83rem;
+      color: var(--text-3);
+      position: relative;
+      z-index: 1;
+    }
+    footer a {
+      color: var(--text-2);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    footer a:hover { color: var(--teal); }
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .footer-sep { color: var(--text-3); }
+
+    /* ANIMATIONS */
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* SCROLL REVEAL */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+    .reveal-delay-6 { transition-delay: 0.6s; }
+
+    /* TEAL LINE ACCENT */
+    .teal-line {
+      display: inline-block;
+      width: 32px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--teal), transparent);
+      border-radius: 2px;
+      margin-right: 10px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="#">
+      <div class="nav-logo-icon">
+        <img src="./app/icons/Icon-192.png" alt="VNT APP" onerror="this.outerHTML='<svg width=\'16\' height=\'16\' viewBox=\'0 0 16 16\' fill=\'none\'><circle cx=\'8\' cy=\'8\' r=\'6\' stroke=\'%2300E5C8\' stroke-width=\'1.5\'/><path d=\'M8 5v3l2 2\' stroke=\'%2300E5C8\' stroke-width=\'1.5\' stroke-linecap=\'round\'/></svg>'">
+      </div>
+      VNT APP
+    </a>
+    <div class="nav-spacer"></div>
+    <a class="nav-link" href="https://github.com/lmq8267/VntApp" target="_blank">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+      GitHub
+    </a>
+    <a class="nav-btn" href="https://github.com/lmq8267/VntApp/releases" target="_blank">立即下载</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">
+    <div class="badge-dot"></div>
+    跨平台 &nbsp;·&nbsp; 开源免费 &nbsp;·&nbsp; 高性能
+  </div>
+  <h1>
+    简单易用的<br>
+    <span class="accent">虚拟网络</span>管理工具
+  </h1>
+  <p>基于 Flutter + Rust 构建，支持 Android、iOS、Windows、macOS、Linux，安全快速地组建虚拟局域网。</p>
+  <div class="hero-actions">
+    <a class="btn-primary" href="https://github.com/lmq8267/VntApp/releases" target="_blank">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      下载应用
+    </a>
+    <a class="btn-outline" href="https://github.com/lmq8267/VntApp" target="_blank">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+      查看源码
+    </a>
+  </div>
+</section>
+
+<div class="demo-wrap">
+  <!-- ANIMATED HINT -->
+  <div class="demo-hint">
+    <div class="hint-pill">
+      <div class="hint-icon">
+        <svg viewBox="0 0 16 16" fill="none" stroke="var(--teal)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 1v5M5 4l3-3 3 3"/>
+          <rect x="2" y="9" width="12" height="6" rx="1.5"/>
+          <circle cx="8" cy="12" r="1"/>
+        </svg>
+      </div>
+      <span class="hint-text" id="hintText"></span>
+      <span class="hint-cursor" id="hintCursor"></span>
+      <span class="hint-arrow">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 8h10M9 4l4 4-4 4"/>
+        </svg>
+      </span>
+    </div>
+  </div>
+
+  <!-- DEMO WINDOW -->
+  <div class="win-frame">
+    <div class="win-bar">
+      <div class="win-dots">
+        <div class="win-dot red"></div>
+        <div class="win-dot yellow"></div>
+        <div class="win-dot green"></div>
+      </div>
+      <div class="win-bar-icon">
+        <img src="./app/icons/Icon-192.png" alt="" onerror="this.style.display='none'">
+      </div>
+      <div class="win-bar-title">VNT APP — 虚拟网络管理</div>
+      <div class="win-bar-actions">
+        <div class="wc"><svg viewBox="0 0 10 10"><line x1="1" y1="5" x2="9" y2="5"/></svg></div>
+        <div class="wc"><svg viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8"/></svg></div>
+        <div class="wc" style="border-radius:6px"><svg viewBox="0 0 10 10"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg></div>
+      </div>
+    </div>
+    <div class="win-screen">
+      <div class="win-loading" id="loading">
+        <div class="loading-icon"><div class="spin"></div></div>
+        <span>正在加载 Demo…</span>
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+        <span style="font-size:11px; opacity:0.5; margin-top:4px;">首次加载约需 10~30 秒</span>
+      </div>
+      <iframe src="./app/" title="VNT GUI Demo" onload="document.getElementById('loading').style.display='none'"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="section" style="padding-top: 0;">
+  <div class="stats-row reveal">
+    <div class="stat-card reveal reveal-delay-1">
+      <div class="stat-num">5+</div>
+      <div class="stat-label">支持平台</div>
+    </div>
+    <div class="stat-card reveal reveal-delay-2">
+      <div class="stat-num">P2P</div>
+      <div class="stat-label">直连优先</div>
+    </div>
+    <div class="stat-card reveal reveal-delay-3">
+      <div class="stat-num">AES</div>
+      <div class="stat-label">加密传输</div>
+    </div>
+    <div class="stat-card reveal reveal-delay-4">
+      <div class="stat-num">0¥</div>
+      <div class="stat-label">永久免费</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="section" style="padding-top: 0;">
+  <div class="section-eyebrow reveal">核心特性</div>
+  <div class="section-title reveal">为什么选择 VNT APP<br><span>专为现代网络场景设计</span></div>
+  <div class="features-grid">
+    <div class="feature reveal reveal-delay-1">
+      <div class="feature-icon-wrap">🌐</div>
+      <h3>全平台支持</h3>
+      <p>Android、iOS、Windows、macOS、Linux 一套代码，统一体验，随时随地保持连接。</p>
+    </div>
+    <div class="feature reveal reveal-delay-2">
+      <div class="feature-icon-wrap">⚡</div>
+      <h3>高性能内核</h3>
+      <p>Rust 编写的核心引擎，低延迟、高吞吐，P2P 直连优先，自动穿越 NAT 障碍。</p>
+    </div>
+    <div class="feature reveal reveal-delay-3">
+      <div class="feature-icon-wrap">🔒</div>
+      <h3>安全加密</h3>
+      <p>支持 AES-GCM、ChaCha20 等多种加密算法，数据指纹验证，端到端安全保障。</p>
+    </div>
+    <div class="feature reveal reveal-delay-4">
+      <div class="feature-icon-wrap">📊</div>
+      <h3>实时监控</h3>
+      <p>流量统计、设备延迟、丢包率、NAT 类型一目了然，网络状态尽在掌握。</p>
+    </div>
+    <div class="feature reveal reveal-delay-5">
+      <div class="feature-icon-wrap">🎯</div>
+      <h3>智能路由</h3>
+      <p>自动选择最优路径，支持中继回退，端口转发，保证最佳连接质量。</p>
+    </div>
+    <div class="feature reveal reveal-delay-6">
+      <div class="feature-icon-wrap">🛠️</div>
+      <h3>简单配置</h3>
+      <p>图形化界面，配置导入导出，多配置管理，一键连接，无需复杂命令行操作。</p>
+    </div>
+  </div>
+</div>
+
+<!-- DOWNLOAD -->
+<div class="download-section">
+  <div class="section">
+    <div class="section-eyebrow reveal">立即下载</div>
+    <div class="section-title reveal">选择你的平台<br><span>所有版本均免费开源</span></div>
+    <div class="platforms">
+      <a class="platform reveal reveal-delay-1" href="https://github.com/lmq8267/VntApp/releases" target="_blank"><span class="platform-emoji">🤖</span><span>Android APK</span></a>
+      <a class="platform reveal reveal-delay-2" href="https://github.com/lmq8267/VntApp/releases" target="_blank"><span class="platform-emoji">🍎</span><span>iOS IPA</span></a>
+      <a class="platform reveal reveal-delay-3" href="https://github.com/lmq8267/VntApp/releases" target="_blank"><span class="platform-emoji">🪟</span><span>Windows EXE</span></a>
+      <a class="platform reveal reveal-delay-4" href="https://github.com/lmq8267/VntApp/releases" target="_blank"><span class="platform-emoji">🍏</span><span>macOS DMG</span></a>
+      <a class="platform reveal reveal-delay-5" href="https://github.com/lmq8267/VntApp/releases" target="_blank"><span class="platform-emoji">🐧</span><span>Linux AppImage</span></a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <span>© 2026 VNT APP</span>
+    <span class="footer-sep">·</span>
+    <a href="https://github.com/lmq8267/VntApp" target="_blank">GitHub</a>
+    <span class="footer-sep">·</span>
+    <span>Built with Flutter &amp; Rust</span>
+    <span class="footer-sep">·</span>
+    <span>开源免费</span>
+  </div>
+</footer>
+
+<script>
+  // TYPEWRITER HINT ANIMATION
+  const messages = [
+    '👆 点击 Demo 试试看，可以直接体验！',
+    '🖱️ 这是真实的 Flutter Web 演示',
+    '📱 模拟完整的 VNT APP 操作界面',
+    '✨ 无需安装，即刻体验所有功能',
+  ];
+  let msgIdx = 0;
+  let charIdx = 0;
+  let isDeleting = false;
+  let isPaused = false;
+  const hintText = document.getElementById('hintText');
+
+  function typeWrite() {
+    if (isPaused) { setTimeout(typeWrite, 60); return; }
+    const current = messages[msgIdx];
+    if (!isDeleting) {
+      hintText.textContent = current.slice(0, charIdx + 1);
+      charIdx++;
+      if (charIdx === current.length) {
+        isPaused = true;
+        setTimeout(() => { isPaused = false; isDeleting = true; typeWrite(); }, 3200);
+        return;
+      }
+      setTimeout(typeWrite, 58);
+    } else {
+      hintText.textContent = current.slice(0, charIdx - 1);
+      charIdx--;
+      if (charIdx === 0) {
+        isDeleting = false;
+        msgIdx = (msgIdx + 1) % messages.length;
+        setTimeout(typeWrite, 400);
+        return;
+      }
+      setTimeout(typeWrite, 28);
+    }
+  }
+  setTimeout(typeWrite, 800);
+
+  // SCROLL REVEAL
+  const revealEls = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(el => {
+      if (el.isIntersecting) { el.target.classList.add('visible'); }
+    });
+  }, { threshold: 0.12 });
+  revealEls.forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

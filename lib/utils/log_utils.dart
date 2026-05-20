@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:vnt_app/utils/platform_utils.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// 日志路径工具类
@@ -11,11 +12,11 @@ class LogUtils {
   /// - macOS: /tmp/vnt_app/logs (避免提权后路径变化)
   /// - Windows/Linux: 当前目录/logs
   static Future<String> getLogDirectory() async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (PlatformUtils.isAndroid || PlatformUtils.isIOS) {
       // 移动平台：使用应用文档目录
       final appDocDir = await getApplicationDocumentsDirectory();
       return '${appDocDir.path}/logs';
-    } else if (Platform.isMacOS) {
+    } else if (PlatformUtils.isMacOS) {
       // macOS：使用 /tmp 目录，避免提权后路径变化
       // /tmp 目录所有用户都能访问，不受提权影响
       return '/tmp/vnt_app/logs';

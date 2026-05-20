@@ -1,8 +1,12 @@
+import 'dart:async';
 import 'dart:io';
+import 'package:vnt_app/utils/platform_utils.dart';
+import 'package:vnt_app/web_demo_vnt_manager.dart';
 import 'dart:convert';
 import 'dart:isolate';
 import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:vnt_app/theme/app_theme.dart';
 import 'package:vnt_app/theme/color_utils.dart';
 import 'package:vnt_app/network_config.dart';
@@ -25,12 +29,14 @@ class ConfigListPage extends StatefulWidget {
   final Function(NetworkConfig)? onConfigSelected;
   final Function(VoidCallback)? onRefreshCallback;
   final VoidCallback? onDataChanged;
+  final VoidCallback? onDisconnect;
 
   const ConfigListPage({
     super.key,
     this.onConfigSelected,
     this.onRefreshCallback,
     this.onDataChanged,
+    this.onDisconnect,
   });
 
   @override
@@ -41,20 +47,31 @@ class _ConfigListPageState extends State<ConfigListPage> {
   final DataPersistence _dataPersistence = DataPersistence();
   List<NetworkConfig> _configs = [];
   bool _isLoading = true;
+  Timer? _webRefreshTimer;
 
   @override
   void initState() {
     super.initState();
     _loadConfigs();
-    // 将刷新方法传递给父组件
     widget.onRefreshCallback?.call(_loadConfigs);
+    // Web 模式下定时刷新连接状态
+    if (kIsWeb) {
+      _webRefreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+        if (mounted) setState(() {});
+      });
+    }
   }
 
   @override
   void didUpdateWidget(ConfigListPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 当页面重新显示时，重新加载配置
     _loadConfigs();
+  }
+
+  @override
+  void dispose() {
+    _webRefreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadConfigs() async {
@@ -239,14 +256,15 @@ class _ConfigListPageState extends State<ConfigListPage> {
           ),
         ),
         SizedBox(width: context.cardSpacing),
-        Expanded(
-          child: _buildSmallActionButton(
-            isDark,
-            Icons.file_download_outlined,
-            '导入配置',
-            _importSingleConfig,
+        if (!kIsWeb) // Web 模式禁用导入
+          Expanded(
+            child: _buildSmallActionButton(
+              isDark,
+              Icons.file_download_outlined,
+              '导入配置',
+              _importSingleConfig,
+            ),
           ),
-        ),
       ],
     );
   }
@@ -338,7 +356,9 @@ class _ConfigListPageState extends State<ConfigListPage> {
   }
 
   Widget _buildConfigCard(NetworkConfig config, int index, bool isDark) {
-    final isConnected = vntManager.hasConnectionItem(config.itemKey);
+    final isConnected = kIsWeb
+        ? (WebDemoVntManager.isConnected && WebDemoVntManager.currentConfig?.itemKey == config.itemKey)
+        : vntManager.hasConnectionItem(config.itemKey);
     final primaryColor = Theme.of(context).primaryColor;
 
     return Container(
@@ -719,7 +739,9 @@ class _ConfigListPageState extends State<ConfigListPage> {
 
   // 切换连接状态
   Future<void> _toggleConnection(NetworkConfig config) async {
-    final isConnected = vntManager.hasConnectionItem(config.itemKey);
+    final isConnected = kIsWeb
+        ? (WebDemoVntManager.isConnected && WebDemoVntManager.currentConfig?.itemKey == config.itemKey)
+        : vntManager.hasConnectionItem(config.itemKey);
 
     if (isConnected) {
       // 断开连接 - 显示确认弹窗
@@ -733,8 +755,20 @@ class _ConfigListPageState extends State<ConfigListPage> {
   // 连接VNT
   Future<void> _connectVnt(NetworkConfig config) async {
     // iOS使用VPN连接
-    if (Platform.isIOS) {
+    if (PlatformUtils.isIOS) {
       await _connectViaIOSVPN(config);
+      return;
+    }
+
+    // Web 平台：模拟连接（不支持真实 VPN）
+    if (PlatformUtils.isWeb) {
+      _showConnectingDialog(config);
+      await WebDemoVntManager.connect(config);
+      if (mounted) {
+        if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+        widget.onConfigSelected?.call(config);
+        setState(() {});
+      }
       return;
     }
     
@@ -765,7 +799,7 @@ class _ConfigListPageState extends State<ConfigListPage> {
             setState(() {});
             widget.onConfigSelected?.call(config);
             // 更新 Android 磁贴和小组件
-            if (Platform.isAndroid) {
+            if (PlatformUtils.isAndroid) {
               VntAppCall.updateWidgetAndTile(true);
             }
             // 更新系统托盘
@@ -785,7 +819,7 @@ class _ConfigListPageState extends State<ConfigListPage> {
           showTopToast(context, '[$configName] 服务已停止', isSuccess: false);
           setState(() {});
           // 更新 Android 磁贴和小组件
-          if (Platform.isAndroid) {
+          if (PlatformUtils.isAndroid) {
             VntAppCall.updateWidgetAndTile(vntManager.hasConnection());
           }
           // 更新系统托盘
@@ -811,7 +845,7 @@ class _ConfigListPageState extends State<ConfigListPage> {
         }
         _handleConnectionError(msg, configName, itemKey);
         // 更新 Android 磁贴和小组件
-        if (Platform.isAndroid) {
+        if (PlatformUtils.isAndroid) {
           VntAppCall.updateWidgetAndTile(vntManager.hasConnection());
         }
         // 更新系统托盘
@@ -825,7 +859,7 @@ class _ConfigListPageState extends State<ConfigListPage> {
         //   vntManager.remove(itemKey);
         //   showTopToast(context, '[$configName] 连接超时 ${msg.address}', isSuccess: false);
         //   // 更新 Android 磁贴和小组件
-        //   if (Platform.isAndroid) {
+        //   if (PlatformUtils.isAndroid) {
         //     VntAppCall.updateWidgetAndTile(vntManager.hasConnection());
         //   }
         //   // 更新系统托盘
@@ -1012,7 +1046,7 @@ class _ConfigListPageState extends State<ConfigListPage> {
   // 导出单个配置
   Future<void> _exportSingleConfig(NetworkConfig config) async {
     try {
-      if (Platform.isAndroid) {
+      if (PlatformUtils.isAndroid) {
         final directory = await getTemporaryDirectory();
         final fileName = '${config.configName}_${DateTime.now().millisecondsSinceEpoch}.json';
         final filePath = '${directory.path}/$fileName';
@@ -1043,7 +1077,7 @@ class _ConfigListPageState extends State<ConfigListPage> {
             showTopToast(context, '导出已取消', isSuccess: false);
           }
         }
-      } else if (Platform.isIOS) {
+      } else if (PlatformUtils.isIOS) {
         // iOS使用Share Sheet分享文件
         final tempDir = await getTemporaryDirectory();
         final fileName = '${config.configName}_${DateTime.now().millisecondsSinceEpoch}.json';
@@ -1289,21 +1323,15 @@ class _ConfigListPageState extends State<ConfigListPage> {
                     child: ElevatedButton(
                       onPressed: () async {
                         Navigator.pop(context);
-
-                        // 执行断开连接
+                        if (kIsWeb) {
+                          await WebDemoVntManager.disconnect();
+                          widget.onDisconnect?.call();
+                          if (mounted) setState(() {});
+                          return;
+                        }
                         await vntManager.remove(config.itemKey);
-
-                        // 更新状态
-                        if (mounted) {
-                          setState(() {});
-                        }
-
-                        // 更新 Android 磁贴和小组件
-                        if (Platform.isAndroid) {
-                          VntAppCall.updateWidgetAndTile(vntManager.hasConnection());
-                        }
-
-                        // 更新系统托盘
+                        if (mounted) setState(() {});
+                        if (PlatformUtils.isAndroid) VntAppCall.updateWidgetAndTile(vntManager.hasConnection());
                         SystemTrayManager().updateMenu();
                         SystemTrayManager().updateTooltip();
                       },

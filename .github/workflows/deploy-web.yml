@@ -1,0 +1,78 @@
+name: Deploy Flutter Web to GitHub Pages
+
+on:
+  push:
+    branches:
+      - demo
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+      
+      - name: Build Flutter Web (Demo Mode)
+        run: |
+          REPO_NAME="${{ github.event.repository.name }}"
+          OWNER="${{ github.repository_owner }}"
+          if [ "$REPO_NAME" = "${OWNER}.github.io" ]; then
+            BASE_HREF="/app/"
+          else
+            BASE_HREF="/${REPO_NAME}/app/"
+          fi
+          flutter build web --release --base-href "$BASE_HREF" --dart-define=FLUTTER_WEB_CANVASKIT_URL=canvaskit/ --web-renderer canvaskit
+      
+      - name: Prepare docs directory
+        run: |
+          # 保留 index.html (landing page)
+          if [ -f docs/index.html ]; then
+            cp docs/index.html /tmp/landing.html
+          fi
+          
+          # 清空并重建
+          rm -rf docs
+          mkdir -p docs
+          
+          # 恢复 landing page
+          if [ -f /tmp/landing.html ]; then
+            cp /tmp/landing.html docs/index.html
+          fi
+          
+          # 复制 Flutter Web 构建产物到 app 子目录
+          cp -r build/web docs/app
+          
+          # 创建 .nojekyll
+          touch docs/.nojekyll
+      
+      - name: Upload Web Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-web
+          path: build/web
+
+      - name: Deploy to GitHub Pages
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add docs
+          if git diff --staged --quiet; then
+            echo "No changes to deploy"
+          else
+            git commit -m "🚀 Deploy Flutter Web to GitHub Pages [skip ci]"
+            git push
+          fi

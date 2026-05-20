@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'package:vnt_app/utils/platform_utils.dart';
 import 'dart:isolate';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:path_provider/path_provider.dart';
@@ -18,6 +20,7 @@ import 'package:vnt_app/utils/log_utils.dart';
 import 'package:vnt_app/network_config.dart';
 import 'package:vnt_app/system_tray_manager.dart';
 import 'package:vnt_app/config_manager.dart';
+import 'package:vnt_app/web_demo_config.dart';
 
 final SystemTray systemTray = SystemTray();
 final AppWindow appWindow = AppWindow();
@@ -25,7 +28,7 @@ final AppWindow appWindow = AppWindow();
 bool _startHidden = false;
 
 bool _shouldStartHidden(List<String> args) {
-  return Platform.isWindows &&
+  return PlatformUtils.isWindows &&
       args.any((arg) =>
           arg == '--startup-hidden' ||
           arg == '--startup-tray' ||
@@ -35,10 +38,10 @@ bool _shouldStartHidden(List<String> args) {
 
 /// 检测是否是 Windows 10 或更高版本
 bool isWindows10OrGreater() {
-  if (!Platform.isWindows) return false;
+  if (!PlatformUtils.isWindows) return false;
 
   try {
-    final version = Platform.operatingSystemVersion;
+    final version = PlatformUtils.operatingSystemVersion;
     // Windows 版本格式: "Microsoft Windows [Version 10.0.19045.5247]"
     // Windows 7: 6.1, Windows 8: 6.2, Windows 8.1: 6.3, Windows 10: 10.0
     final match = RegExp(r'(\d+)\.(\d+)').firstMatch(version);
@@ -55,11 +58,18 @@ bool isWindows10OrGreater() {
 }
 
 Future<void> main(List<String> args) async {
+  // Web Demo 模式：跳过所有原生平台初始化
+  if (kIsWeb) {
+    WidgetsFlutterBinding.ensureInitialized();
+    runApp(const VntApp());
+    return;
+  }
+  
   _startHidden = _shouldStartHidden(args);
 
   // macOS 启动时先检查权限，在Flutter初始化之前
   // 避免显示窗口后再提示输入密码
-  if (Platform.isMacOS) {
+  if (PlatformUtils.isMacOS) {
     final needsRestart = await MacOSPrivilegeManager.checkAndRequestPrivilegeOnStartup();
     if (needsRestart) {
       // app 正在以管理员权限重新启动，当前进程将退出
@@ -85,7 +95,7 @@ Future<void> main(List<String> args) async {
   await RustLib.init();
   
   // Windows: 初始化配置管理器
-  if (Platform.isWindows) {
+  if (PlatformUtils.isWindows) {
     await ConfigManager().init();
   }
 
@@ -110,11 +120,11 @@ Future<void> main(List<String> args) async {
     debugPrint('初始化日志系统失败: $e');
   }
 
-  if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+  if (PlatformUtils.isWindows || PlatformUtils.isMacOS || PlatformUtils.isLinux) {
     await windowManager.ensureInitialized();
 
     // macOS 使用系统原生标题栏（保留所有原生窗口功能）
-    if (Platform.isMacOS) {
+    if (PlatformUtils.isMacOS) {
       // macOS 专用配置 - 使用系统标题栏
       WindowOptions windowOptions = const WindowOptions(
         size: Size(1000, 700),
@@ -155,7 +165,7 @@ Future<void> main(List<String> args) async {
       windowManager.setTitle('VNT App');
 
       // 只在 Windows 10+ 上使用自定义标题栏，Windows 7 使用系统标题栏
-      if (!Platform.isWindows || isWindows10OrGreater()) {
+      if (!PlatformUtils.isWindows || isWindows10OrGreater()) {
         await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
       }
 
@@ -168,7 +178,7 @@ Future<void> main(List<String> args) async {
       }
 
       windowManager.waitUntilReadyToShow().then((_) async {
-        if (Platform.isWindows && _startHidden) {
+        if (PlatformUtils.isWindows && _startHidden) {
           await windowManager.setSkipTaskbar(true);
           await windowManager.hide();
         } else {
@@ -178,7 +188,7 @@ Future<void> main(List<String> args) async {
     }
   }
 
-  if (Platform.isAndroid) {
+  if (PlatformUtils.isAndroid) {
     VntAppCall.init();
   }
 
@@ -264,7 +274,7 @@ class _VntAppState extends State<VntApp> {
           canPop: false,
           onPopInvoked: (didPop) {
             if (didPop) return;
-            if (Platform.isAndroid) {
+            if (PlatformUtils.isAndroid) {
               VntAppCall.moveTaskToBack();
             }
           },
@@ -289,7 +299,7 @@ class _MainAppState extends State<MainApp> with WindowListener {
   void initState() {
     super.initState();
 
-    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+    if (PlatformUtils.isWindows || PlatformUtils.isMacOS || PlatformUtils.isLinux) {
       initSystemTray();
       // 设置窗口关闭拦截
       windowManager.setPreventClose(true);
@@ -353,7 +363,7 @@ class _MainAppState extends State<MainApp> with WindowListener {
               // 连接成功，更新磁贴和小组件状态
               VntAppCall.updateWidgetAndTile(true);
               // 更新Windows托盘
-              if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+              if (PlatformUtils.isWindows || PlatformUtils.isMacOS || PlatformUtils.isLinux) {
                 SystemTrayManager().updateMenu();
                 SystemTrayManager().updateTooltip();
               }
@@ -363,7 +373,7 @@ class _MainAppState extends State<MainApp> with WindowListener {
               // 连接停止，更新磁贴和小组件状态
               VntAppCall.updateWidgetAndTile(vntManager.hasConnection());
               // 更新Windows托盘
-              if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+              if (PlatformUtils.isWindows || PlatformUtils.isMacOS || PlatformUtils.isLinux) {
                 SystemTrayManager().updateMenu();
                 SystemTrayManager().updateTooltip();
               }
@@ -382,7 +392,7 @@ class _MainAppState extends State<MainApp> with WindowListener {
             // 连接错误，更新磁贴和小组件状态
             VntAppCall.updateWidgetAndTile(vntManager.hasConnection());
             // 更新Windows托盘
-            if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+            if (PlatformUtils.isWindows || PlatformUtils.isMacOS || PlatformUtils.isLinux) {
               SystemTrayManager().updateMenu();
               SystemTrayManager().updateTooltip();
             }
@@ -421,7 +431,7 @@ class _MainAppState extends State<MainApp> with WindowListener {
   void onWindowClose() async {
     
     // macOS 显示特殊的确认对话框（说明由于安全限制无法最小化）
-    if (Platform.isMacOS) {
+    if (PlatformUtils.isMacOS) {
       final shouldClose = await _showMacOSCloseConfirmationDialog();
       if (shouldClose == true) {
         // 退出应用：先断开连接再关闭
@@ -448,7 +458,7 @@ class _MainAppState extends State<MainApp> with WindowListener {
         debugPrint('退出应用');
         await vntManager.removeAll();
         windowManager.setPreventClose(false);
-        if (Platform.isLinux) {
+        if (PlatformUtils.isLinux) {
           // Linux 强制退出进程，避免残留
           await windowManager.destroy();
           exit(0);
@@ -613,7 +623,7 @@ class _MainAppState extends State<MainApp> with WindowListener {
 Future<void> initSystemTray() async {
   String path;
   
-  if (Platform.isLinux) {
+  if (PlatformUtils.isLinux) {
     // Linux 复制到 /tmp 并设置普通用户可读权限
     try {
       final iconFile = File('/tmp/vnt_app_icon.png');
@@ -626,7 +636,7 @@ Future<void> initSystemTray() async {
       path = 'assets/app_icon.png'; // 降级
     }
   } else {
-    path = Platform.isWindows ? 'assets/app_icon.ico' : 'assets/app_icon.png';
+    path = PlatformUtils.isWindows ? 'assets/app_icon.ico' : 'assets/app_icon.png';
   }
 
   // 初始化系统托盘
@@ -646,11 +656,11 @@ Future<void> initSystemTray() async {
   // 注册事件处理器
   systemTray.registerSystemTrayEventHandler((eventName) {
     if (eventName == kSystemTrayEventClick) {
-      Platform.isWindows
+      PlatformUtils.isWindows
           ? SystemTrayManager().showMainWindow()
           : systemTray.popUpContextMenu();
     } else if (eventName == kSystemTrayEventRightClick) {
-      Platform.isWindows
+      PlatformUtils.isWindows
           ? systemTray.popUpContextMenu()
           : SystemTrayManager().showMainWindow();
     }
@@ -658,14 +668,14 @@ Future<void> initSystemTray() async {
 }
 
 String getArchitecture() {
-  if (Platform.isWindows) {
-    return Platform.environment['PROCESSOR_ARCHITECTURE']!.toLowerCase();
+  if (PlatformUtils.isWindows) {
+    return PlatformUtils.environment['PROCESSOR_ARCHITECTURE']!.toLowerCase();
   }
   return 'unknown';
 }
 
 Future<void> copyAppropriateDll() async {
-  if (!Platform.isWindows) return;
+  if (!PlatformUtils.isWindows) return;
 
   final arch = getArchitecture();
   String dllPath;
@@ -697,7 +707,7 @@ Future<void> copyAppropriateDll() async {
 }
 
 Future<void> copyLogConfig() async {
-  if (!Platform.isWindows && !Platform.isMacOS && !Platform.isLinux) {
+  if (!PlatformUtils.isWindows && !PlatformUtils.isMacOS && !PlatformUtils.isLinux) {
     return;
   }
   final logConfigFile = File('logs/log4rs.yaml');
