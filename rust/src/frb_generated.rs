@@ -1861,6 +1861,7 @@ impl SseDecode for crate::api::vnt_api::VntConfig {
         let mut var_allowWireGuard = <bool>::sse_decode(deserializer);
         let mut var_localDev = <Option<String>>::sse_decode(deserializer);
         let mut var_disableRelay = <bool>::sse_decode(deserializer);
+        let mut var_hook = <Option<String>>::sse_decode(deserializer);
         return crate::api::vnt_api::VntConfig {
             tap: var_tap,
             token: var_token,
@@ -1890,6 +1891,7 @@ impl SseDecode for crate::api::vnt_api::VntConfig {
             allow_wire_guard: var_allowWireGuard,
             local_dev: var_localDev,
             disable_relay: var_disableRelay,
+            hook: var_hook,
         };
     }
 }
@@ -2264,6 +2266,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::vnt_api::VntConfig {
             self.allow_wire_guard.into_into_dart().into_dart(),
             self.local_dev.into_into_dart().into_dart(),
             self.disable_relay.into_into_dart().into_dart(),
+            self.hook.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -2773,6 +2776,7 @@ impl SseEncode for crate::api::vnt_api::VntConfig {
         <bool>::sse_encode(self.allow_wire_guard, serializer);
         <Option<String>>::sse_encode(self.local_dev, serializer);
         <bool>::sse_encode(self.disable_relay, serializer);
+        <Option<String>>::sse_encode(self.hook, serializer);
     }
 }
 

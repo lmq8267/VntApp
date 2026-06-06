@@ -1544,8 +1544,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   VntConfig dco_decode_vnt_config(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 28)
-      throw Exception('unexpected arr length: expect 28 but see ${arr.length}');
+    if (arr.length != 29)
+      throw Exception('unexpected arr length: expect 29 but see ${arr.length}');
     return VntConfig(
       tap: dco_decode_bool(arr[0]),
       token: dco_decode_String(arr[1]),
@@ -1575,6 +1575,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       allowWireGuard: dco_decode_bool(arr[25]),
       localDev: dco_decode_opt_String(arr[26]),
       disableRelay: dco_decode_bool(arr[27]),
+      hook: dco_decode_opt_String(arr[28]),
     );
   }
 
@@ -2148,6 +2149,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_allowWireGuard = sse_decode_bool(deserializer);
     var var_localDev = sse_decode_opt_String(deserializer);
     var var_disableRelay = sse_decode_bool(deserializer);
+    var var_hook = sse_decode_opt_String(deserializer);
     return VntConfig(
         tap: var_tap,
         token: var_token,
@@ -2176,7 +2178,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         compressor: var_compressor,
         allowWireGuard: var_allowWireGuard,
         localDev: var_localDev,
-        disableRelay: var_disableRelay);
+        disableRelay: var_disableRelay,
+        hook: var_hook);
   }
 
   @protected
@@ -2765,6 +2768,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.allowWireGuard, serializer);
     sse_encode_opt_String(self.localDev, serializer);
     sse_encode_bool(self.disableRelay, serializer);
+    sse_encode_opt_String(self.hook, serializer);
   }
 }
 

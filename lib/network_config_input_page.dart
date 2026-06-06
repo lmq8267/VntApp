@@ -28,6 +28,7 @@ class _NetworkConfigInputPageState extends State<NetworkConfigInputPage> {
       }());
   final _virtualIPv4Controller = TextEditingController();
   final _localDevController = TextEditingController();
+  final _hookController = TextEditingController();
   final _serverAddressController = TextEditingController();
   final _stunServers = <TextEditingController>[];
   final _inIps = <TextEditingController>[];
@@ -158,6 +159,7 @@ class _NetworkConfigInputPageState extends State<NetworkConfigInputPage> {
     _allowWg = config.allowWg ? 'FALSE' : 'TRUE';
     _localDevController.text = config.localDev;
     _disableRelay = config.disableRelay;
+    _hookController.text = config.hook;
     setState(() {
       _routingMode = config.firstLatency ? 'LOW_LATENCY' : 'P2P';
       _builtInIpProxy = config.noInIpProxy ? 'CLOSE' : 'OPEN';
@@ -240,6 +242,7 @@ class _NetworkConfigInputPageState extends State<NetworkConfigInputPage> {
         allowWg: _allowWg == 'FALSE' ? false : true,
         localDev: _localDevController.text,
         disableRelay: _disableRelay,
+        hook: (Platform.isAndroid || Platform.isIOS) ? '' : _hookController.text,
       );
       Navigator.pop(context, config);
     } else {
@@ -645,6 +648,23 @@ class _NetworkConfigInputPageState extends State<NetworkConfigInputPage> {
                         ],
                       ),
                       const SizedBox(height: 16),
+                      if (!Platform.isAndroid && !Platform.isIOS) ...[
+                        TextFormField(
+                          controller: _hookController,
+                          minLines: 2,
+                          maxLines: 2,
+                          maxLength: 512,
+                          decoration: const InputDecoration(
+                            labelText: 'Hook命令',
+                            alignLabelWithHint: true,
+                            helperText:
+                                '状态变化时执行的完整命令，建议使用绝对路径；路径包含空格或中文时请用引号包裹脚本路径。',
+                            hintText:
+                                'sh "/absolute/path/hook.sh"\npowershell -ExecutionPolicy Bypass -File "C:\\path\\hook.ps1"',
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       _buildTextFormField(
                         _virtualNetworkCardNameController,
                         '虚拟网卡名称',

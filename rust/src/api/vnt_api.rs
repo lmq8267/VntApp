@@ -143,6 +143,7 @@ pub struct VntConfig {
     pub allow_wire_guard: bool,
     pub local_dev: Option<String>,
     pub disable_relay: bool,
+    pub hook: Option<String>,
 }
 
 pub struct VntApi {
@@ -210,6 +211,8 @@ impl VntApi {
             vnt_config.allow_wire_guard,
             vnt_config.local_dev,
             vnt_config.disable_relay,
+            #[cfg(not(target_os = "android"))]
+            vnt_config.hook,
         )?;
         Ok(Self {
             vnt: Vnt::new(conf, call)?,

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -3906,6 +3907,39 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Widget _buildLongDeviceInfoItem(bool isDark, String label, String value) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(context.spacingMedium),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: context.fontBody,
+              fontWeight: FontWeight.w500,
+              color: isDark ? Colors.white70 : Colors.black54,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SelectableText(
+            value,
+            style: TextStyle(
+              fontSize: context.fontSmall,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // 显示配置信息弹窗
   void _showConfigDialog(bool isDark) {
     final primaryColor = Theme.of(context).primaryColor;
@@ -4058,6 +4092,8 @@ class _DashboardPageState extends State<DashboardPage> {
                       _buildDeviceInfoItem(isDark, '禁用代理', config.noInIpProxy ? '是' : '否'),
                       _buildDeviceInfoItem(isDark, '允许 WireGuard', config.allowWg ? '是' : '否'),
                       _buildDeviceInfoItem(isDark, '禁用客户端中继', config.disableRelay ? '是' : '否'),
+                      if (!Platform.isAndroid && !Platform.isIOS)
+                        _buildLongDeviceInfoItem(isDark, 'Hook命令', config.hook.isEmpty ? '未设置' : config.hook),
 
                       if (config.inIps.isNotEmpty || config.outIps.isNotEmpty || config.portMappings.isNotEmpty) ...[
                         const SizedBox(height: 16),

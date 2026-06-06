@@ -1686,6 +1686,13 @@ class _RoomPageState extends State<RoomPage> with SingleTickerProviderStateMixin
         deviceInfo = vntBox.currentDevice();
         deviceInfo['upStream'] = vntBox.upStream();
         deviceInfo['downStream'] = vntBox.downStream();
+        final netConfig = vntBox.getNetConfig();
+        if (!Platform.isAndroid &&
+            !Platform.isIOS &&
+            netConfig != null &&
+            netConfig.hook.isNotEmpty) {
+          deviceInfo['hook'] = netConfig.hook;
+        }
         break;
       }
     }
@@ -1767,12 +1774,15 @@ class _RoomPageState extends State<RoomPage> with SingleTickerProviderStateMixin
               Flexible(
                 child: SingleChildScrollView(
                   padding: ResponsiveUtils.padding(context, all: 20),
-                  child: SelectableText(
-                    info ?? '',
-                    style: TextStyle(
-                      fontSize: context.sp(13),
-                      fontFamily: 'monospace',
-                      color: isDark ? AppTheme.darkTextPrimary : AppTheme.lightTextPrimary,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      info ?? '',
+                      style: TextStyle(
+                        fontSize: context.sp(13),
+                        fontFamily: 'monospace',
+                        color: isDark ? AppTheme.darkTextPrimary : AppTheme.lightTextPrimary,
+                      ),
                     ),
                   ),
                 ),
@@ -1824,7 +1834,11 @@ class _RoomPageState extends State<RoomPage> with SingleTickerProviderStateMixin
       if (!vntBox.isClosed()) {
         final netConfig = vntBox.getNetConfig();
         if (netConfig != null) {
-          configInfo = json2yaml(netConfig.toJsonSimple());
+          final configJson = netConfig.toJsonSimple();
+          if (Platform.isAndroid || Platform.isIOS) {
+            configJson.remove('hook');
+          }
+          configInfo = json2yaml(configJson);
         }
         break;
       }
@@ -1905,12 +1919,15 @@ class _RoomPageState extends State<RoomPage> with SingleTickerProviderStateMixin
               Flexible(
                 child: SingleChildScrollView(
                   padding: ResponsiveUtils.padding(context, all: 20),
-                  child: SelectableText(
-                    configInfo!,
-                    style: TextStyle(
-                      fontSize: context.sp(13),
-                      fontFamily: 'monospace',
-                      color: isDark ? AppTheme.darkTextPrimary : AppTheme.lightTextPrimary,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SelectableText(
+                      configInfo!,
+                      style: TextStyle(
+                        fontSize: context.sp(13),
+                        fontFamily: 'monospace',
+                        color: isDark ? AppTheme.darkTextPrimary : AppTheme.lightTextPrimary,
+                      ),
                     ),
                   ),
                 ),

@@ -29,6 +29,7 @@ class NetworkConfig {
   bool allowWg;
   String localDev;
   bool disableRelay;
+  String hook;
 
   NetworkConfig({
     required this.itemKey,
@@ -61,6 +62,7 @@ class NetworkConfig {
     required this.allowWg,
     required this.localDev,
     required this.disableRelay,
+    required this.hook,
   });
   Map<String, dynamic> toJson() {
     return {
@@ -94,6 +96,7 @@ class NetworkConfig {
       'allow_wire_guard': allowWg,
       'local_dev': localDev,
       'disable_relay': disableRelay,
+      'hook': hook,
     };
   }
 
@@ -129,6 +132,7 @@ class NetworkConfig {
       if (allowWg) 'allow_wire_guard': allowWg,
       if (localDev.isNotEmpty) 'local_dev': localDev,
       if (disableRelay) 'disable_relay': disableRelay,
+      if (hook.isNotEmpty) 'hook': hook,
     };
   }
 
@@ -164,6 +168,7 @@ class NetworkConfig {
       allowWg: json['allow_wire_guard'] ?? false,
       localDev: json['local_dev'] ?? '',
       disableRelay: json['disable_relay'] ?? false,
+      hook: json['hook'] ?? '',
     );
   }
 }

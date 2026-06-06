@@ -165,7 +165,10 @@ class VntBox {
         compressor: config.compressor.isEmpty ? 'none' : config.compressor,
         allowWireGuard: config.allowWg,
         localDev: config.localDev.isEmpty ? null : config.localDev,
-        disableRelay: config.disableRelay);
+        disableRelay: config.disableRelay,
+        hook: (Platform.isAndroid || Platform.isIOS || config.hook.isEmpty)
+            ? null
+            : config.hook);
     var vntCall = VntApiCallback(successFn: () {
       uiCall.send('success');
     }, createTunFn: (info) {

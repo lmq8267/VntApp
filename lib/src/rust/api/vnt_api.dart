@@ -433,6 +433,7 @@ class VntConfig {
   final bool allowWireGuard;
   final String? localDev;
   final bool disableRelay;
+  final String? hook;
 
   const VntConfig({
     required this.tap,
@@ -463,6 +464,7 @@ class VntConfig {
     required this.allowWireGuard,
     this.localDev,
     required this.disableRelay,
+    this.hook,
   });
 
   @override
@@ -494,7 +496,8 @@ class VntConfig {
       compressor.hashCode ^
       allowWireGuard.hashCode ^
       localDev.hashCode ^
-      disableRelay.hashCode;
+      disableRelay.hashCode ^
+      hook.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -528,5 +531,6 @@ class VntConfig {
           compressor == other.compressor &&
           allowWireGuard == other.allowWireGuard &&
           localDev == other.localDev &&
-          disableRelay == other.disableRelay;
+          disableRelay == other.disableRelay &&
+          hook == other.hook;
 }
